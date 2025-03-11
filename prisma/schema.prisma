@@ -6,3 +6,188 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+enum Gender {
+  Men
+  Women
+}
+
+enum Role {
+  Customer
+  Admin
+}
+
+enum ShipmentStatus {
+  Pending
+  Delivered
+}
+
+enum PaymentStatus {
+  Unpaid
+  Paid
+  Cancel
+}
+
+enum PaymentMethod {
+  CreditCard
+  Promptpay
+}
+
+model User {
+  id        Int       @id @default(autoincrement()) @map("user_id")
+  username  String    @unique
+  firstname String?
+  lastname  String?
+  email     String    @unique
+  phone     String?
+  password  String
+  address   String?
+  role      Role      @default(Customer)
+  orders    Order[]
+  reviews   Review[]
+  cart      Cart?
+  wishlist  Wishlist?
+
+  @@map("user")
+}
+
+model Product {
+  id            Int             @id @default(autoincrement()) @map("product_id")
+  productname   String
+  description   String?
+  price         Int
+  discount      Int?
+  brand         String
+  gender        Gender
+  images        String?         @map("image_urls")
+  created_at    DateTime        @default(now())
+  category_id   Int             @map("category_id")
+  category      Category        @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  reviews       Review[]
+  stock         Stock[]
+  cartItems     Cart_Item[]
+  wishlistItems Wishlist_Item[]
+  orderItems    Order_Item[]
+
+  @@map("product")
+}
+
+model Category {
+  id           Int       @id @default(autoincrement()) @map("category_id")
+  categoryname String
+  products     Product[]
+
+  @@map("category")
+}
+
+model Stock {
+  id             Int      @id @default(autoincrement()) @map("stock_id")
+  product_id     Int
+  size_id        Int
+  stock_quantity Int
+  updated_at     DateTime @updatedAt
+  product        Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  size           Size     @relation(fields: [size_id], references: [id], onDelete: Cascade)
+
+  @@map("stock")
+}
+
+model Size {
+  id      Int     @id @default(autoincrement()) @map("size_id")
+  us_size Int
+  gender  Gender
+  stock   Stock[]
+
+  @@map("size")
+}
+
+model Cart {
+  id           Int         @id @default(autoincrement()) @map("cart_id")
+  user_id      Int         @unique
+  created_date DateTime    @default(now())
+  user         User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  cartItems    Cart_Item[]
+
+  @@map("cart")
+}
+
+model Cart_Item {
+  id         Int     @id @default(autoincrement()) @map("cart_item_id")
+  cart_id    Int
+  product_id Int
+  quantity   Int
+  cart       Cart    @relation(fields: [cart_id], references: [id], onDelete: Cascade)
+  product    Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@map("cart_item")
+}
+
+model Wishlist {
+  id            Int             @id @default(autoincrement()) @map("wishlist_id")
+  user_id       Int             @unique
+  created_at    DateTime        @default(now())
+  user          User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  wishlistItems Wishlist_Item[]
+
+  @@map("wishlist")
+}
+
+model Wishlist_Item {
+  id          Int      @id @default(autoincrement()) @map("wishlist_item_id")
+  wishlist_id Int
+  product_id  Int
+  wishlist    Wishlist @relation(fields: [wishlist_id], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@map("wishlist_item")
+}
+
+model Order {
+  id              Int            @id @default(autoincrement()) @map("order_id")
+  user_id         Int
+  order_date      DateTime       @default(now())
+  total_amount    Int
+  shipment_status ShipmentStatus
+  payment_status  PaymentStatus
+  user            User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  orderItems      Order_Item[]
+  payment         Payment?
+
+  @@map("order")
+}
+
+model Order_Item {
+  id         Int     @id @default(autoincrement()) @map("order_item_id")
+  order_id   Int
+  product_id Int
+  quantity   Int
+  price      Int
+  order      Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product    Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@map("order_item")
+}
+
+model Payment {
+  id            Int           @id @default(autoincrement()) @map("payment_id")
+  order_id      Int           @unique
+  payment_date  DateTime      @default(now())
+  paymentmethod PaymentMethod
+  amount        Int
+  order         Order         @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@map("payment")
+}
+
+model Review {
+  id          Int      @id @default(autoincrement()) @map("review_id")
+  product_id  Int
+  user_id     Int
+  rating      Int
+  comment     String?
+  review_date DateTime @default(now())
+  product     Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("review")
+}
