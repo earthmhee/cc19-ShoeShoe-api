@@ -59,7 +59,7 @@ model Product {
   discount      Int?
   brand         String
   gender        Gender
-  images        String?         @map("image_urls")
+  images        String          @db.VarChar(999) @map("image_urls")
   created_at    DateTime        @default(now())
   category_id   Int             @map("category_id")
   category      Category        @relation(fields: [category_id], references: [id], onDelete: Cascade)
