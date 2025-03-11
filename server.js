@@ -1,3 +1,4 @@
+const morgan = require("morgan");
 require('dotenv').config()
 const morgan = require("morgan");
 const helmet = require('helmet')
