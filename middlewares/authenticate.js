@@ -3,22 +3,23 @@ const { clerkClient } = require("@clerk/express");
 
 module.exports = async (req, res, next) => {
   try {
-    //Token (req.body) need userdata from CLERK
+    // Extract Clerk User ID
     const clerkID = req.auth.userId;
-
+    console.log('clerk id : ', clerkID);
+    
     if (!clerkID) {
-      return createError(401, "Unauthorized!");
+      return next(createError(401, "Unauthorized!"));
     }
 
-    //get user data from Clerk
+    // Fetch user details from Clerk
     const userClerk = await clerkClient.users.getUser(clerkID);
 
-    //assign in req.user
+    // Attach user data to the request object
     req.user = userClerk;
 
-    // send to controller after next
+    // Proceed to the next middleware/controller
     next();
   } catch (error) {
     next(error);
   }
-};
+}
