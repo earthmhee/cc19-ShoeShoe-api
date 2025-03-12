@@ -55,7 +55,7 @@ model User {
 model Product {
   id            Int             @id @default(autoincrement()) @map("product_id")
   productname   String
-  description   String?
+  description   String?         @db.VarChar(999)
   price         Int
   discount      Int?
   brand         String
