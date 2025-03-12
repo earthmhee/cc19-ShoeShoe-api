@@ -35,6 +35,7 @@ enum PaymentMethod {
 
 model User {
   id        Int       @id @default(autoincrement()) @map("user_id")
+  clerkID   String    @unique @map("clerk_id")
   username  String    @unique
   firstname String?
   lastname  String?
@@ -59,7 +60,7 @@ model Product {
   discount      Int?
   brand         String
   gender        Gender
-  images        String          @db.VarChar(999) @map("image_urls")
+  images        String          @map("image_urls") @db.VarChar(999)
   created_at    DateTime        @default(now())
   category_id   Int             @map("category_id")
   category      Category        @relation(fields: [category_id], references: [id], onDelete: Cascade)
