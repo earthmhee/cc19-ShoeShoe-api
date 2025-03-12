@@ -10,6 +10,8 @@ const app = express();
 // import routes ...
 const userRoute = require("./routes/user-route");
 const productRoute = require("./routes/product-route");
+const wishlistRoute = require("./routes/wishlist-route");
+const orderRoute = require("./routes/order-route");
 
 // import Middlewares ...
 app.use(
@@ -23,6 +25,8 @@ app.use(express.json());
 
 app.use("/api/user", userRoute);
 app.use("/api/product", productRoute);
+app.use("/api/wishlist", wishlistRoute)
+app.use("/api/order", orderRoute);
 
 // notFound - send 404
 app.use(notFound);
