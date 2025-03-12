@@ -7,17 +7,17 @@ const notFound = require("./middlewares/notFound");
 const handleError = require("./middlewares/handleError");
 const { clerkMiddleware } = require("@clerk/express");
 const app = express();
-// Auth lib from Clerk
-// const { ClerkExpressWithAuth } = require('@clerk/clerk-sdk-node')
-
-// import routes ...
-const userRoute = require("./routes/user-route");
+// const { ClerkExpressWithAuth } = require('@clerk/clerk-sdk-node') // Auth lib from Clerk
 
 // import Middlewares ...
 app.use(clerkMiddleware()); //
-app.use(
-  morgan(":method :url :status :res[content-length] - :response-time ms")
-); // check logging request
+
+// import routes ...
+const userRoute = require("./routes/user-route");
+const productRoute = require("./routes/product-route");
+
+// import Middlewares ...
+app.use( morgan(":method :url :status :res[content-length] - :response-time ms")); // check logging request
 app.use(helmet()); // security for app
 app.use(cors()); // allows connection
 
@@ -25,6 +25,7 @@ app.use(cors()); // allows connection
 app.use(express.json());
 
 app.use("/user", userRoute);
+app.use("/api/product", productRoute);
 
 // notFound - send 404
 app.use(notFound);
