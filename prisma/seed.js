@@ -321,7 +321,7 @@ async function main() {
     {
       productname: "Hoka clifton 9 men's running shoes - wheat/shifting sand",
       description:
-        "",
+        "Lightweight & Cushioned: The Clifton 9 is designed with an updated midsole foam that enhances responsiveness while maintaining a plush feel.",
       price: 5990,
       discount: 0,
       brand: "Hoka",
@@ -359,7 +359,7 @@ async function main() {
     {
       productname: "Hoka kawana 2 men's running shoes - slate/forest cover",
       description:
-        "",
+        "The HOKA Kawana 2 is a versatile running shoe designed to provide a balanced and responsive experience for daily training and gym workouts.",
       price: 5390,
       discount: 0,
       brand: "Hoka",
