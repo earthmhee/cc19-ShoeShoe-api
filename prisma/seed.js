@@ -749,7 +749,7 @@ async function main() {
         "If we only made one running shoe, it would be the Fresh Foam X 1080. The unique combination of reliable comfort and high performance offers versatility that spans everyday to race day. The Fresh Foam X midsole cushioning is built for smooth transitions from landing to push-off, while a second-skin style mesh upper is breathable and supportive.",
       price: 5900,
       discount: 0,
-      brand: "",
+      brand: "New Balance",
       gender: "Women",
       category_id: 2, // Sports3
       images: JSON.stringify([
