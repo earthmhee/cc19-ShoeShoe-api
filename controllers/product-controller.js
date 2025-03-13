@@ -138,3 +138,38 @@ exports.updateproduct = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.deleteproduct = async (req, res, next) => {
+    try {
+        const { id } = req.params; // รับค่า id จาก URL
+        if (!id) {
+            return res.status(400).json({ msg: "กรุณาระบุ ID ของสินค้า" });
+        }
+
+        console.log("Request received at /delete-product with ID:", id);
+
+        // ตรวจสอบว่าสินค้ามีอยู่จริง
+        const existingProduct = await prisma.product.findUnique({
+            where: { id: parseInt(id) },
+        });
+
+        if (!existingProduct) {
+            return res.status(404).json({ msg: "ไม่พบสินค้าในระบบ" });
+        }
+
+        // ลบสินค้าออกจากฐานข้อมูล
+        await prisma.product.delete({
+            where: { id: parseInt(id) },
+        });
+
+        console.log("Product deleted successfully:", id);
+
+        res.status(200).json({
+            msg: "Delete Product Success",
+            productId: id,
+        });
+    } catch (error) {
+        console.error("Error:", error);
+        next(error);
+    }
+};

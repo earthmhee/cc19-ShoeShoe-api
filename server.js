@@ -14,6 +14,10 @@ app.use(clerkMiddleware()); // Auth check from Clerk
 // import routes ...
 const userRoute = require("./routes/user-route");
 const productRoute = require("./routes/product-route");
+const cartRoute = require("./routes/cart-route");
+const wishlistRoute = require("./routes/wishlist-route");
+const orderRoute = require("./routes/order-route");
+
 
 // import Middlewares ...
 app.use( morgan(":method :url :status :res[content-length] - :response-time ms")); // check logging request
@@ -25,6 +29,9 @@ app.use(express.json());
 
 app.use("/api/user", userRoute);
 app.use("/api/product", productRoute);
+app.use("/api/cart", cartRoute);
+app.use("/api/wishlist", wishlistRoute)
+app.use("/api/order", orderRoute);
 
 // notFound - send 404
 app.use(notFound);

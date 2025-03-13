@@ -16,8 +16,8 @@
   },
   "scripts": {
     "dev": "nodemon server.js",
-    "resetDB": "node prisma/resetdb.js",
-    "start": "nodemon server.js"
+    "start": "nodemon server.js",
+    "resetDB": "node prisma/resetdb.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
