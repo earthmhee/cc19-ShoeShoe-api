@@ -7,10 +7,9 @@ const notFound = require("./middlewares/notFound");
 const handleError = require("./middlewares/handleError");
 const { clerkMiddleware } = require("@clerk/express");
 const app = express();
-// const { ClerkExpressWithAuth } = require('@clerk/clerk-sdk-node') // Auth lib from Clerk
 
 // import Middlewares ...
-app.use(clerkMiddleware()); //
+app.use(clerkMiddleware()); // Auth check from Clerk
 
 // import routes ...
 const userRoute = require("./routes/user-route");
@@ -24,7 +23,7 @@ app.use(cors()); // allows connection
 // route connect ...
 app.use(express.json());
 
-app.use("/user", userRoute);
+app.use("/api/user", userRoute);
 app.use("/api/product", productRoute);
 
 // notFound - send 404
