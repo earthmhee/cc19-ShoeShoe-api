@@ -42,14 +42,26 @@ model User {
   email     String    @unique
   phone     String?
   password  String
-  address   String?
   role      Role      @default(Customer)
   orders    Order[]
   reviews   Review[]
   cart      Cart?
   wishlist  Wishlist?
+  address   Address?  @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  addressId Int       @map("address_id")
 
   @@map("user")
+}
+
+model Address {
+  id          Int     @id @default(autoincrement())
+  homenum     String  @unique
+  subdistrict String?
+  district    String?
+  province    String
+  contry      String
+  postcode    Int
+  user        User[]
 }
 
 model Product {
