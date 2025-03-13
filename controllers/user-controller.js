@@ -5,7 +5,8 @@ exports.getMyAccount = async (req, res, next) => {
         const { id } = req.user
         console.log('User Id : ', id);
         // look for user
-        const rs = await prisma.user.findFirst({ where: { clerkID: id}})
+        const rs = 'hello'
+        // const rs = await prisma.user.findFirst({ where: { clerkID: id}})
         res.status(200).json({ msg: "My account get", rs})
     } catch (error) {
         next (error)
