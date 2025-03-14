@@ -17,6 +17,7 @@ const productRoute = require("./routes/product-route");
 const cartRoute = require("./routes/cart-route");
 const wishlistRoute = require("./routes/wishlist-route");
 const orderRoute = require("./routes/order-route");
+const paymentRoute = require("./routes/payment-route");
 
 
 // import Middlewares ...
@@ -32,6 +33,7 @@ app.use("/api/product", productRoute);
 app.use("/api/cart", cartRoute);
 app.use("/api/wishlist", wishlistRoute)
 app.use("/api/order", orderRoute);
+app.use("/api/payment", paymentRoute);
 
 // notFound - send 404
 app.use(notFound);
