@@ -138,3 +138,66 @@ exports.updateproduct = async (req, res, next) => {
     next(error);
   }
 };
+
+// controllers/product-controller.js
+exports.getProductById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('Request params:', req.params);
+    console.log('Product ID:', req.params.id);
+    // Validate id
+    if (!id) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Product ID is required'
+      });
+    }
+
+    // Convert id to integer and validate
+    const productId = parseInt(id);
+    if (isNaN(productId)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid product ID format'
+      });
+    }
+
+    const product = await prisma.product.findUnique({
+      where: {
+        id: productId  // Make sure to pass the actual value, not just the type
+      },
+      include: {
+        category: true,
+        stock: true,
+        reviews: {
+          include: {
+            user: {
+              select: {
+                username: true,
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!product) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Product not found'
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: product
+    });
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch product',
+      error: error.message
+    });
+  }
+};
