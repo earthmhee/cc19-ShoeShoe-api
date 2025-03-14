@@ -41,14 +41,12 @@ model User {
   lastname  String?
   email     String    @unique
   phone     String?
-  password  String
   role      Role      @default(Customer)
   orders    Order[]
   reviews   Review[]
   cart      Cart?
   wishlist  Wishlist?
-  address   Address?  @relation(fields: [addressId], references: [id], onDelete: Cascade)
-  addressId Int       @map("address_id")
+  address   Address[]
 
   @@map("user")
 }
@@ -61,7 +59,8 @@ model Address {
   province    String
   contry      String
   postcode    Int
-  user        User[]
+  userId      Int     @map("user_id")
+  User        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Product {
