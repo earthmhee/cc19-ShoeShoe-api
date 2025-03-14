@@ -160,6 +160,7 @@ model Order {
   user_id         Int
   order_date      DateTime       @default(now())
   total_amount    Int
+  status          String         @default("Pending")
   shipment_status ShipmentStatus
   payment_status  PaymentStatus
   user            User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -187,6 +188,7 @@ model Payment {
   payment_date  DateTime      @default(now())
   paymentmethod PaymentMethod
   amount        Int
+  status        PaymentStatus @default(Unpaid)
   order         Order         @relation(fields: [order_id], references: [id], onDelete: Cascade)
 
   @@map("payment")
