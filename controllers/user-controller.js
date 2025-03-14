@@ -1,9 +1,12 @@
-const createError = require("../utils/createError");
+const { default: clerkClient } = require("@clerk/clerk-sdk-node");
 const prisma = require("../config/prisma");
+const createError = require("../utils/createError");
 
-exports.getMyAccount = async (req, res, next) => {
+exports.createNewAccount = async (req, res, next) => {
   try {
     const { id } = req.user;
+    const userClerk = req.user;
+    const userId = userClerk.id;
     console.log("User Id : ", id);
     // look for user
     const rs = await prisma.user.findUnique({
@@ -11,26 +14,30 @@ exports.getMyAccount = async (req, res, next) => {
         clerkID: id,
       },
     });
-    const userClerk = req.user;
-    console.log(userClerk);
-
+    // const role = "Customer"
+    // หากเป็น null (สร้าง user ครั้งแรก) ทำการสร้างผู้ใช้ใน prisma 
     if (rs === null) {
       const result = await prisma.user.create({
-        data : {
-            clerkID: userClerk?.id,
-            username: userClerk?.username,
-            firstname: userClerk?.firstName,
-            lastname: userClerk?.lastName,
-            email: userClerk?.emailAddresses?.[0]?.emailAddress,
-            phone: userClerk?.phoneNumbers?.[0]?.phoneNumber,
-            password: 'Dummy',
-            role: userClerk?.publicMetadata?.role || 'Customer'
-        }
-      })
-      console.log(result);
+        data: {
+          clerkID: userClerk?.id,
+          username: userClerk?.username,
+          firstname: userClerk?.firstName,
+          lastname: userClerk?.lastName,
+          email: userClerk?.emailAddresses?.[0]?.emailAddress,
+          phone: userClerk?.phoneNumbers?.[0]?.phoneNumber,
+          password: "Dummy",
+          role: userClerk?.publicMetadata?.role || "Customer",
+        },
+      });
+      // ดัน Metadata ไปที่ Clerk
+      await clerkClient.users.updateUserMetadata(userId, {
+        publicMetadata: {
+          role: "Customer"
+        },
+      });
     }
 
-    res.status(200).json({ msg: "My account get", rs});
+    res.status(200).json({ msg: "My account create", rs });
   } catch (error) {
     next(error);
   }
@@ -39,8 +46,30 @@ exports.getMyAccount = async (req, res, next) => {
 // dummy for now
 exports.createUpdateAccount = async (req, res, next) => {
   try {
-    console.log("Dummy for update");
-    const rs = await "Updated";
+    const { firstName, lastName } = req.body; // config for every input
+    const input = { firstName, lastName };
+    console.log(input);
+
+    const userClerk = req.user;
+    const userId = userClerk.id;
+
+    // check if Admin
+    const userRole = userClerk?.publicMetadata?.role;
+    if (userRole !== "Admin") {
+      createError(401, 'Unauthorized !!')
+    }
+    // update in Clerk Database
+    const rs = await clerkClient.users.updateUser(userId, input);
+    // update in mySql Database
+    const result = await prisma.user.update({
+      where: { clerkID: userId },
+      data: {
+        firstname: firstName,
+        lastname: lastName,
+        role: role,
+      },
+    });
+
     res.status(200).json({ msg: "Create Update", rs });
   } catch (error) {
     next(error);
