@@ -2,19 +2,96 @@ const prisma = require("../config/prisma");
 
 exports.showproduct = async (req, res, next) => {
   try {
-    const products = await prisma.product.findMany({
+    // Extract filter parameters from req.body
+    const { category, gender, size, priceRange, brand } = req.body || {};
+    
+    console.log("Received filter parameters:", { category, gender, size, priceRange, brand });
+    
+    // Build the base query filter
+    const filter = {};
+    
+    // Handle category filter (could be single ID or array)
+    if (category) {
+      if (Array.isArray(category)) {
+        filter.category_id = { in: category.map(id => parseInt(id)) };
+      } else {
+        filter.category_id = parseInt(category);
+      }
+    }
+    
+    // Handle gender filter
+    if (gender) {
+      if (Array.isArray(gender)) {
+        filter.gender = { in: gender };
+      } else {
+        filter.gender = gender;
+      }
+    }
+    
+    // Handle brand filter (could be single brand or array)
+    if (brand) {
+      if (Array.isArray(brand)) {
+        filter.brand = { in: brand };
+      } else {
+        filter.brand = brand;
+      }
+    }
+    
+    // Handle price range if provided
+    if (priceRange) {
+      filter.price = {};
+      
+      if (priceRange.min !== undefined) {
+        filter.price.gte = parseInt(priceRange.min);
+      }
+      
+      if (priceRange.max !== undefined) {
+        filter.price.lte = parseInt(priceRange.max);
+      }
+    }
+    
+    console.log("Applied filters:", JSON.stringify(filter, null, 2));
+    
+    // Get all products matching the base filters
+    let products = await prisma.product.findMany({
+      where: filter,
       include: {
         category: true,
-        // reviews: true,   //เก็บไว้ก่อน
-        stock: true,
+        stock: {
+          include: {
+            size: true
+          }
+        },
       },
     });
-
+    
+    console.log(`Found ${products.length} products after applying database filters`);
+    
+    // Handle size filtering separately if needed
+    if (size) {
+      // Convert to array if not already
+      const sizeIds = Array.isArray(size) 
+        ? size.map(id => parseInt(id))
+        : [parseInt(size)];
+        
+      console.log("Filtering by size IDs:", sizeIds);
+      
+      // Filter products by size
+      const beforeCount = products.length;
+      products = products.filter(product => 
+        product.stock.some(stockItem => 
+          sizeIds.includes(stockItem.size_id) && stockItem.stock_quantity > 0
+        )
+      );
+      console.log(`Filtered out ${beforeCount - products.length} products that didn't match the size criteria`);
+    }
+    
     res.status(200).json({
-      msg: "add Product Success",
+      msg: "Get Products Success",
       data: products,
     });
   } catch (error) {
+    console.error("Error fetching products:", error);
     next(error);
   }
 };
@@ -200,4 +277,38 @@ exports.getProductById = async (req, res) => {
       error: error.message
     });
   }
+};
+exports.deleteproduct = async (req, res, next) => {
+    try {
+        const { id } = req.params; // รับค่า id จาก URL
+        if (!id) {
+            return res.status(400).json({ msg: "กรุณาระบุ ID ของสินค้า" });
+        }
+
+        console.log("Request received at /delete-product with ID:", id);
+
+        // ตรวจสอบว่าสินค้ามีอยู่จริง
+        const existingProduct = await prisma.product.findUnique({
+            where: { id: parseInt(id) },
+        });
+
+        if (!existingProduct) {
+            return res.status(404).json({ msg: "ไม่พบสินค้าในระบบ" });
+        }
+
+        // ลบสินค้าออกจากฐานข้อมูล
+        await prisma.product.delete({
+            where: { id: parseInt(id) },
+        });
+
+        console.log("Product deleted successfully:", id);
+
+        res.status(200).json({
+            msg: "Delete Product Success",
+            productId: id,
+        });
+    } catch (error) {
+        console.error("Error:", error);
+        next(error);
+    }
 };
