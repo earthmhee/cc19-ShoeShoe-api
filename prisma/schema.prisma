@@ -68,7 +68,7 @@ model Product {
   productname   String
   description   String?         @db.VarChar(999)
   price         Int
-  discount      Int?
+  discount      Decimal         @default(0) @db.Decimal(10,2) // Default is 0 (no discount)
   brand         String
   gender        Gender
   images        String          @map("image_urls") @db.VarChar(999)
