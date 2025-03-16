@@ -3,39 +3,41 @@ const prisma = require("../config/prisma");
 const createError = require("../utils/createError");
 
 exports.createNewAccount = async (req, res, next) => {
-	try {
-		const { id } = req.user;
-		const userClerk = req.user;
-		const userId = userClerk.id;
-		console.log("User Id : ", id);
-		// look for user
-		const rs = await prisma.user.findUnique({
-			where: {
-				clerkID: id,
-			},
-		});
-		// const role = "Customer"
-		// หากเป็น null (สร้าง user ครั้งแรก) ทำการสร้างผู้ใช้ใน prisma
-		if (rs === null) {
-			const result = await prisma.user.create({
-				data: {
-					clerkID: userClerk?.id,
-					username: userClerk?.username,
-					firstname: userClerk?.firstName,
-					lastname: userClerk?.lastName,
-					email: userClerk?.emailAddresses?.[0]?.emailAddress,
-					phone: userClerk?.phoneNumbers?.[0]?.phoneNumber,
-					password: "Dummy",
-					role: userClerk?.publicMetadata?.role || "Customer",
-				},
-			});
-			// ดัน Metadata ไปที่ Clerk
-			await clerkClient.users.updateUserMetadata(userId, {
-				publicMetadata: {
-					role: "Customer",
-				},
-			});
-		}
+  try {
+    const { id } = req.user;
+    const userClerk = req.user;
+    const userId = userClerk.id;
+    console.log("User Id : ", id);
+    // look for user
+    const rs = await prisma.user.findUnique({
+      where: {
+        clerkID: id,
+      },
+    });
+    const role = userClerk?.publicMetadata?.role
+    // หากเป็น null (สร้าง user ครั้งแรก) ทำการสร้างผู้ใช้ใน prisma 
+    if (rs === null) {
+      const result = await prisma.user.create({
+        data: {
+          clerkID: userClerk?.id,
+          username: userClerk?.username,
+          firstname: userClerk?.firstName,
+          lastname: userClerk?.lastName,
+          email: userClerk?.emailAddresses?.[0]?.emailAddress,
+          phone: userClerk?.phoneNumbers?.[0]?.phoneNumber,
+          password: "Dummy",
+          role: role || "Customer",
+        },
+      });
+      // ดัน Metadata ไปที่ Clerk หากใน mySql เป็น Admin ไม่ต้องเปลี่ยน role ใน Clerk (กันบัค)
+      if (role !== 'Admin') {
+        await clerkClient.users.updateUserMetadata(userId, {
+          publicMetadata: {
+            role: "Customer"
+          },
+        });
+      }
+    }
 
 		res.status(200).json({ msg: "My account create", rs });
 	} catch (error) {
