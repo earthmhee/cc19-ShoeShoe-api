@@ -19,6 +19,7 @@ const wishlistRoute = require("./routes/wishlist-route");
 const orderRoute = require("./routes/order-route");
 const paymentRoute = require("./routes/payment-route");
 const addressRoute = require("./routes/address-route");
+const stockRoute = require("./routes/stock-route");
 
 // import Middlewares ...
 app.use(
@@ -48,6 +49,7 @@ app.use("/api/wishlist", wishlistRoute);
 app.use("/api/order", orderRoute);
 app.use("/api/payment", paymentRoute);
 app.use("/api/address", addressRoute);
+app.use("/api/stock", stockRoute);
 
 // notFound - send 404
 app.use(notFound);
