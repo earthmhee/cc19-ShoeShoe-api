@@ -18,20 +18,21 @@ const cartRoute = require("./routes/cart-route");
 const wishlistRoute = require("./routes/wishlist-route");
 const orderRoute = require("./routes/order-route");
 const paymentRoute = require("./routes/payment-route");
+const addressRoute = require("./routes/address-route");
 
 // import Middlewares ...
 app.use(
-	morgan(":method :url :status :res[content-length] - :response-time ms")
+  morgan(":method :url :status :res[content-length] - :response-time ms")
 ); // check logging request
 app.use(helmet()); // security for app
 // ตั้งค่า CORS
 app.use(
-	cors({
-		origin: "http://localhost:5173", // ระบุ origin ของ frontend
-		credentials: true, // อนุญาตให้ส่ง credentials
-		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-		allowedHeaders: ["Content-Type", "Authorization"],
-	})
+  cors({
+    origin: "http://localhost:5173", // ระบุ origin ของ frontend
+    credentials: true, // อนุญาตให้ส่ง credentials
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
 );
 
 // จัดการ preflight request (OPTIONS)
@@ -46,6 +47,7 @@ app.use("/api/cart", cartRoute);
 app.use("/api/wishlist", wishlistRoute);
 app.use("/api/order", orderRoute);
 app.use("/api/payment", paymentRoute);
+app.use("/api/address", addressRoute);
 
 // notFound - send 404
 app.use(notFound);
