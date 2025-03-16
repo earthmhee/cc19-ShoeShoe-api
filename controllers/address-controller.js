@@ -3,17 +3,19 @@ const prisma = require("../config/prisma");
 exports.createAddress = async (req, res, next) => {
   try {
     const { homenum, subdistrict, district, province, country, postcode } = req.body;
-    const { clerkID } = req.user; // ใช้ clerkID จาก Clerk Authentication
+    const clerkID = req.auth.userId;
+
+    console.log(req.auth)
+
+    console.log("Request received at with Clerk ID:", clerkID);
 
     if (!clerkID) {
-      return res.status(401).json({ msg: "Unauthorized: กรุณาเข้าสู่ระบบ" });
+      return res.status(401).json({ msg: "Unauthorized! กรุณาเข้าสู่ระบบ" });
     }
-
-    console.log("Request received at /create-address with Clerk ID:", clerkID);
 
     // ค้นหา user จาก clerkID
     const user = await prisma.user.findUnique({
-      where: { clerkID },
+      where: { clerkID }, // ใช้ clerkID ที่ถูกต้อง
     });
 
     if (!user) {
@@ -27,7 +29,7 @@ exports.createAddress = async (req, res, next) => {
         district,
         province,
         country,
-        postcode,
+        postcode: parseInt(postcode), // ป้องกัน Error ประเภทข้อมูล
         userId: user.id,
       },
     });
@@ -45,7 +47,7 @@ exports.createAddress = async (req, res, next) => {
 // ดึงข้อมูลที่อยู่ของผู้ใช้
 exports.getAddress = async (req, res, next) => {
   try {
-    const { clerkID } = req.user;
+    const clerkID = req.auth.userId;
 
     if (!clerkID) {
       return res.status(401).json({ msg: "Unauthorized: กรุณาเข้าสู่ระบบ" });
@@ -55,7 +57,7 @@ exports.getAddress = async (req, res, next) => {
 
     // ค้นหา user
     const user = await prisma.user.findUnique({
-      where: { clerkID },
+      where: { clerkId: clerkID },
       include: { address: true },
     });
 
@@ -76,7 +78,7 @@ exports.getAddress = async (req, res, next) => {
 // อัปเดตที่อยู่
 exports.updateAddress = async (req, res, next) => {
   try {
-    const { clerkID } = req.user;
+    const clerkID = req.auth.userId;
     const { id } = req.params;
     const updateData = req.body;
 
@@ -86,7 +88,7 @@ exports.updateAddress = async (req, res, next) => {
 
     console.log("Request received at /update-address with Clerk ID:", clerkID);
 
-    const user = await prisma.user.findUnique({ where: { clerkID } });
+    const user = await prisma.user.findUnique({ where: { clerkId: clerkID } });
     if (!user) return res.status(404).json({ msg: "ไม่พบบัญชีผู้ใช้" });
 
     // ค้นหาที่อยู่
@@ -104,7 +106,7 @@ exports.updateAddress = async (req, res, next) => {
 
     const updatedAddress = await prisma.address.update({
       where: { id: address.id },
-      data: updateData,
+      data: { ...updateData }, 
     });
 
     res.status(200).json({
@@ -120,7 +122,7 @@ exports.updateAddress = async (req, res, next) => {
 // ลบที่อยู่
 exports.deleteAddress = async (req, res, next) => {
   try {
-    const { clerkID } = req.user;
+    const clerkID = req.auth.userId;
     const { id } = req.params;
 
     if (!clerkID) {
@@ -129,7 +131,7 @@ exports.deleteAddress = async (req, res, next) => {
 
     console.log("Request received at /delete-address with Clerk ID:", clerkID);
 
-    const user = await prisma.user.findUnique({ where: { clerkID } });
+    const user = await prisma.user.findUnique({ where: { clerkId: clerkID } });
     if (!user) return res.status(404).json({ msg: "ไม่พบบัญชีผู้ใช้" });
 
     // ค้นหาที่อยู่

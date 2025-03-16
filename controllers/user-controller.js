@@ -16,6 +16,7 @@ exports.createNewAccount = async (req, res, next) => {
 		});
 		// const role = "Customer"
 		// หากเป็น null (สร้าง user ครั้งแรก) ทำการสร้างผู้ใช้ใน prisma
+		console.log(rs)
 		if (rs === null) {
 			const result = await prisma.user.create({
 				data: {
@@ -25,7 +26,6 @@ exports.createNewAccount = async (req, res, next) => {
 					lastname: userClerk?.lastName,
 					email: userClerk?.emailAddresses?.[0]?.emailAddress,
 					phone: userClerk?.phoneNumbers?.[0]?.phoneNumber,
-					password: "Dummy",
 					role: userClerk?.publicMetadata?.role || "Customer",
 				},
 			});

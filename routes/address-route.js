@@ -1,14 +1,14 @@
 const express = require("express");
-const authenticate = require("../middlewares/authenticate");
+// const authenticate = require("../middlewares/authenticate");
 const { createAddress, getAddress, updateAddress, deleteAddress } = require("../controllers/address-controller");
 const addressRoute = express.Router();
 
-addressRoute.post("/", authenticate, createAddress);
+addressRoute.post("/", createAddress);
 
-addressRoute.get("/", authenticate, getAddress);
+addressRoute.get("/", getAddress);
 
-addressRoute.patch("/:id", authenticate, updateAddress);
+addressRoute.patch("/:id", updateAddress);
 
-addressRoute.delete("/:id", authenticate, deleteAddress);
+addressRoute.delete("/:id", deleteAddress);
 
 module.exports = addressRoute
