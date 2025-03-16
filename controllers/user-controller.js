@@ -29,7 +29,7 @@ exports.createNewAccount = async (req, res, next) => {
           role: role || "Customer",
         },
       });
-      // ดัน Metadata ไปที่ Clerk
+      // ดัน Metadata ไปที่ Clerk หากใน mySql เป็น Admin ไม่ต้องเปลี่ยน role ใน Clerk (กันบัค)
       if (role !== 'Admin') {
         await clerkClient.users.updateUserMetadata(userId, {
           publicMetadata: {
