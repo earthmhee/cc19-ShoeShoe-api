@@ -1,8 +1,8 @@
 const express = require("express");
-const paymentController = require("../controllers/payment-controller");
+const { checkout, checkOutStatus } = require("../controllers/payment-controller");
 const paymentRoute = express.Router();
 
-paymentRoute.post("/checkout", paymentController.checkout);
-paymentRoute.post("/checkout-status/:session_id", paymentController.checkOutStatus);
+paymentRoute.post("/checkout", checkout);
+paymentRoute.post("/checkout-status/:session_id", checkOutStatus);
 
 module.exports = paymentRoute;
