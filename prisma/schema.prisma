@@ -57,10 +57,13 @@ model Address {
   subdistrict String?
   district    String?
   province    String
-  contry      String
+  country     String  @default("Thailand")
+  phone       String
   postcode    Int
   userId      Int     @map("user_id")
-  User        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("address")
 }
 
 model Product {
@@ -158,6 +161,7 @@ model Order {
   id              Int            @id @default(autoincrement()) @map("order_id")
   user_id         Int
   order_date      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
   total_amount    Int
   status          String         @default("Pending")
   shipment_status ShipmentStatus

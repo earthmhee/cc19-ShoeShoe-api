@@ -4,7 +4,10 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 exports.checkout = async (req, res, next) => {
   try {
+    // id ที่ส่งมาจาก order
     const { id } = req.body;
+    console.log('checkout id : ',id);
+    
 
     // ค้นหา Order พร้อมรายการสินค้า
     const order = await prisma.order.findUnique({
@@ -30,22 +33,27 @@ exports.checkout = async (req, res, next) => {
         currency: "thb", // ใช้สกุลเงินไทย
         product_data: {
           name: item.product.productname,
-          images: [item.product.images], // ใช้รูปจากสินค้า
+          images: [(item.product.images.match(/(https?:\/\/[^"]+)/))[0]],  // ใช้รูปจากสินค้ารูปแรกส่งเป็น Arr
           description: "ขอบคุณที่สั่งซื้อสินค้าจากร้านเรา",
         },
         unit_amount: item.price * 100, // Stripe ใช้หน่วยสตางค์
       },
       quantity: item.quantity,
     }));
-
+    console.log('Complete Finding Item in DB. Starting checkout sessions');
+    // const line_items = orderItems.map((item) => {
+    //   console.log('item image : ', (item.product.images.match(/"(https?:\/\/[^"]+)"/))[0]);
+    // });
+    
     // สร้าง Stripe Checkout Session และส่ง orderId ไปใน metadata
     const session = await stripe.checkout.sessions.create({
       ui_mode: "embedded",
       metadata: { orderId: order.id }, // บันทึก orderId ไว้ใน metadata
       line_items,
       mode: "payment",
-      return_url: `${process.env.CLIENT_URL}/user/complete/{CHECKOUT_SESSION_ID}`, // Redirect กลับไปที่ Frontend
+      return_url: `${process.env.CLIENT_URL}/checkout-status/{CHECKOUT_SESSION_ID}`,
     });
+    console.log("Stripe session created:", session);
 
     res.send({ clientSecret: session.client_secret });
   } catch (error) {
