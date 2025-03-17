@@ -70,18 +70,18 @@ async function main() {
   const products = [
     // Men's Sneakers
     {
-      productname: "Samba OG Shoes",
+      productname: "Adidas campus 00s men's sneakers - collegiate navy",
       description:
-        "The Samba OG Shoe is a classic Adidas sneaker with a leather upper, suede overlays, and a gum rubber outsole for style and durability. Its T-toe design and signature 3-Stripes make it a timeless streetwear staple.The Samba OG Shoe is a timeless sneaker from Adidas, originally designed for indoor soccer but now a streetwear staple. It features a premium leather upper with suede overlays for durability and style. The signature T-toe design, gold Samba lettering, and contrasting 3-Stripes give it a classic, vintage look. A gum rubber outsole ensures excellent grip and comfort, making it perfect for everyday wear.",
+        "Introducing the CAMPUS 00s Shoes for men, a nod to the iconic primary colours of the 2000s. Crafted from leather and textile with a rubber outsole, these shoes are an update on the classic CAMPUS 80s silhouette. The vibrant full body colour is contrasted by white stripes and terry lining, creating a strong aesthetic that's both simple and impactful. Lace up and step into a new generation of style with these LWG & PREFERRED MATERIALS shoes.",
       price: 3800,
       discount: 0.2,
       brand: "Adidas",
       gender: "Men",
       category_id: 1, // Sneakers1
       images: JSON.stringify([
-        "https://res.cloudinary.com/dfmqmyop1/image/upload/v1741702211/Samoa_Shoes_White_JQ0047_01_00_standard_nheewb.jpg",
-        "https://res.cloudinary.com/dfmqmyop1/image/upload/v1741702399/Samoa_Shoes_White_JQ0047_04_standard_odpoqr.jpg",
-        "https://res.cloudinary.com/dfmqmyop1/image/upload/v1741702451/Samoa_Shoes_White_JQ0047_05_standard_qffj7f.jpg",
+        "https://res.cloudinary.com/dfmqmyop1/image/upload/v1742188337/9991-ADIJI4488NAV008-1_det73l.jpg",
+        "https://res.cloudinary.com/dfmqmyop1/image/upload/v1742188361/9991-ADIJI4488NAV008-2_ucym4r.jpg",
+        "https://res.cloudinary.com/dfmqmyop1/image/upload/v1742188387/9991-ADIJI4488NAV008-3_aqunr2.jpg",
       ]),
       sizes: menSizes.map((size) => ({
         size_id: size.id,
@@ -89,18 +89,18 @@ async function main() {
       })),
     },
     {
-      productname: "Adidas BRMD Shoes",
+      productname: "Gazelle men's sneakers - mineral green",
       description:
-        "The Adidas BRMD Shoes combine modern comfort with a sleek, sporty design. Featuring a breathable mesh upper, responsive cushioning, and a durable rubber outsole, they offer all-day comfort and versatility. Perfect for casual wear or active lifestyles.",
+        "Stride in style with the Gazelle Shoes, a classic adidas icon that transcends trends. Crafted from premium suede with a comfortable nylon tongue and robust rubber outsole, these shoes were originally born for training but quickly found their place in the lifestyle realm. With dark gum soles and lace closure, the Gazelle embodies timeless design and unwavering comfort for every man's wardrobe.",
       price: 3800,
       discount: 0.1,
       brand: "Adidas",
       gender: "Men",
       category_id: 1, // Sneakers2
       images: JSON.stringify([
-        "https://res.cloudinary.com/dfmqmyop1/image/upload/v1741702606/adidas_BRMD_Shoes_Green_JH5458_01_standard_yavujy.jpg",
-        "https://res.cloudinary.com/dfmqmyop1/image/upload/v1741702624/adidas_BRMD_Shoes_Green_JH5458_04_standard_v2pr5a.jpg",
-        "https://res.cloudinary.com/dfmqmyop1/image/upload/v1741702639/adidas_BRMD_Shoes_Green_JH5458_05_standard_rybndy.jpg",
+        "https://res.cloudinary.com/dfmqmyop1/image/upload/v1742188097/9991-ADIIF9655EE0009-1_dx6s9n.jpg",
+        "https://res.cloudinary.com/dfmqmyop1/image/upload/v1742188110/9991-ADIIF9655EE0009-2_zhdbax.jpg",
+        "https://res.cloudinary.com/dfmqmyop1/image/upload/v1742188127/9991-ADIIF9655EE0009-3_m6eeif.jpg",
       ]),
       sizes: menSizes.map((size) => ({
         size_id: size.id,
@@ -110,7 +110,7 @@ async function main() {
     {
       productname: "1906 unisex sneakers shoes - grey",
       description:
-        "The 1906R, like its cousins the 2002R and the 860v2, is led by a sole unit featuring a combination of flexible ACTEVA LITE cushioning, shock absorbing N-ergy, and segmented ABZORB SBS pods at the heel. This hi-tech approach is also reflected in the 1906R’s upper design, which features open-holed mesh and a series of curvilinear synthetic overlays. This distinctive take on the era’s design conventions offers a refined execution of high-performance heritage.",
+        "The 1906R, like its cousins the 2002R and the 860v2, is led by a sole unit featuring a combination of flexible ACTEVA LITE cushioning, shock absorbing N-ergy, and segmented ABZORB SBS pods at the heel. This hi-tech approach is also reflected in the 1906R's upper design, which features open-holed mesh and a series of curvilinear synthetic overlays. This distinctive take on the era's design conventions offers a refined execution of high-performance heritage.",
       price: 6000,
       discount: 0,
       brand: "New Balance",
@@ -628,7 +628,8 @@ async function main() {
       })),
     },
     {
-      productname: "Lacoste carnaby pro leather tricolour trainers women's sneakers shoes - white",
+      productname:
+        "Lacoste carnaby pro leather tricolour trainers women's sneakers shoes - white",
       description:
         "Catch the court spirit with this casual sneaker. Inspired by tennis heritage. Enhanced with iconic Lacoste branding. A timeless finish to any outfit.Leather and synthetic uppersExposed stitches to the sideSynthetic linings Rubber outsoleLacoste branding to the tongue and heel",
       price: 3790,
@@ -647,7 +648,8 @@ async function main() {
       })),
     },
     {
-      productname: "Lacoste t-clip tricolour leather and suede trainers women's sneakers shoes - women",
+      productname:
+        "Lacoste t-clip tricolour leather and suede trainers women's sneakers shoes - women",
       description:
         "True 80s styling gets an update in the T-Clip, an archive-inspired court shoe with urban appeal and a Sideline silhouette. Made from soft, hand-feel nappa leather and elevated with a pigmented finish, uppers are layered with suede hits and paired with a retro gum outsole. The crocodile is embroidered in green on the quarter while debossed branding on the heel completes an old school Lacoste look.Leather and suede uppersRubber outsoleTextile linings, embroidered green crocodile branding at the quarter and a gum outsole enhances the retro look and feel",
       price: 3950,
@@ -666,7 +668,8 @@ async function main() {
       })),
     },
     {
-      productname: "Asics gel-1090v2 women's sneakers shoes - cream/cement grey",
+      productname:
+        "Asics gel-1090v2 women's sneakers shoes - cream/cement grey",
       description:
         "The GEL-1090 V2 sneaker from the IMPERFECTION Pack is inspired by the idea of celebrating imperfection. It's designed with visible foam and cracked leather details that resemble how clay pots age over time. Similar to the motion of a waving checkered flag, sweeping lines appear along the midsole. Meanwhile, the heel is layered with GEL technology to improve comfort.",
       price: 4200,
@@ -703,10 +706,11 @@ async function main() {
         stock_quantity: Math.floor(Math.random() * 20) + 10,
       })),
     },
-    
+
     // Women's Sports
     {
-      productname: "Hoka clifton l suede unisex running shoes - oat milk/bellwether blue",
+      productname:
+        "Hoka clifton l suede unisex running shoes - oat milk/bellwether blue",
       description:
         "Hoka Clifton L Suede Unisex Running Shoes. There may be a 1-2cm difference in measurements depending on the development and manufacturing process.",
       price: 6490,
@@ -744,7 +748,8 @@ async function main() {
       })),
     },
     {
-      productname: "New balance fresh foam x 1080v13 women's running shoes - brown",
+      productname:
+        "New balance fresh foam x 1080v13 women's running shoes - brown",
       description:
         "If we only made one running shoe, it would be the Fresh Foam X 1080. The unique combination of reliable comfort and high performance offers versatility that spans everyday to race day. The Fresh Foam X midsole cushioning is built for smooth transitions from landing to push-off, while a second-skin style mesh upper is breathable and supportive.",
       price: 5900,
@@ -857,7 +862,7 @@ async function main() {
         stock_quantity: Math.floor(Math.random() * 20) + 10,
       })),
     },
-    
+
     // Women's Sandals
     {
       productname: "Crocs despicable me classic unisex clog - black",
@@ -954,7 +959,7 @@ async function main() {
         stock_quantity: Math.floor(Math.random() * 20) + 10,
       })),
     },
-    
+
     // Women's Slippers
     {
       productname: "Adidas adifom stan mule women's sandals - clear pink",
@@ -1033,13 +1038,14 @@ async function main() {
       })),
     },
   ];
-
   // Create products and their stock entries
+  const createdProducts = [];
   for (const productData of products) {
     const { sizes, ...productInfo } = productData;
     const product = await prisma.product.create({
       data: productInfo,
     });
+    createdProducts.push(product);
 
     // Create stock entries for each size
     for (const sizeData of sizes) {
@@ -1055,6 +1061,326 @@ async function main() {
   }
 
   console.log("Products and stock created");
+
+  // --------------------------
+  // Create Users and Addresses
+  // --------------------------
+
+  const users = [
+    {
+      clerkID: "user_2PGBXqmTJelAGJEaOu3cNqFvNCT",
+      username: "admin",
+      firstname: "Admin",
+      lastname: "User",
+      email: "admin@shoestore.com",
+      phone: "0812345678",
+      role: "Admin",
+      address: {
+        homenum: "123/456",
+        subdistrict: "Chatuchak",
+        district: "Chatuchak",
+        province: "Bangkok",
+        postcode: 10900,
+      },
+    },
+    {
+      clerkID: "user_2PGT4zLDoiB7DpxRmi7zowQY9WU",
+      username: "johndoe",
+      firstname: "John",
+      lastname: "Doe",
+      email: "john.doe@example.com",
+      phone: "0823456789",
+      role: "Customer",
+      address: {
+        homenum: "789/12",
+        subdistrict: "Bang Rak",
+        district: "Bang Rak",
+        province: "Bangkok",
+        postcode: 10500,
+      },
+    },
+    {
+      clerkID: "user_2PHTpALg8j3RPcj7W1b1M19VC8x",
+      username: "janesmith",
+      firstname: "Jane",
+      lastname: "Smith",
+      email: "jane.smith@example.com",
+      phone: "0834567890",
+      role: "Customer",
+      address: {
+        homenum: "456/789",
+        subdistrict: "Pathum Wan",
+        district: "Pathum Wan",
+        province: "Bangkok",
+        postcode: 10330,
+      },
+    },
+    {
+      clerkID: "user_2PILKbmnPqi9eoEQfHoMvf7aKNb",
+      username: "bobwilliams",
+      firstname: "Bob",
+      lastname: "Williams",
+      email: "bob.williams@example.com",
+      phone: "0845678901",
+      role: "Customer",
+      address: {
+        homenum: "321/654",
+        subdistrict: "Watthana",
+        district: "Watthana",
+        province: "Bangkok",
+        postcode: 10110,
+      },
+    },
+    {
+      clerkID: "user_2PJcX9DcX1bEqZPdbrK8YlNEMzw",
+      username: "sarahjohnson",
+      firstname: "Sarah",
+      lastname: "Johnson",
+      email: "sarah.johnson@example.com",
+      phone: "0856789012",
+      role: "Customer",
+      address: {
+        homenum: "987/654",
+        subdistrict: "Phra Khanong",
+        district: "Khlong Toei",
+        province: "Bangkok",
+        postcode: 10110,
+      },
+    },
+  ];
+
+  const createdUsers = [];
+  for (const userData of users) {
+    const { address, ...userInfo } = userData;
+
+    // Create user
+    const user = await prisma.user.create({
+      data: userInfo,
+    });
+
+    // Create address for the user
+    await prisma.address.create({
+      data: {
+        ...address,
+        userId: user.id,
+      },
+    });
+
+    createdUsers.push(user);
+  }
+
+  console.log("Users and addresses created");
+
+  // --------------------------
+  // Create Carts and Cart Items
+  // --------------------------
+
+  // Create carts for 3 users (excluding admin)
+  const carts = [];
+  for (let i = 1; i < 4; i++) {
+    const cart = await prisma.cart.create({
+      data: {
+        user_id: createdUsers[i].id,
+      },
+    });
+    carts.push(cart);
+
+    // Add 1-3 random products to each cart
+    const numItems = Math.floor(Math.random() * 3) + 1;
+    const selectedProducts = getRandomElements(createdProducts, numItems);
+
+    for (const product of selectedProducts) {
+      await prisma.cart_Item.create({
+        data: {
+          cart_id: cart.id,
+          product_id: product.id,
+          quantity: Math.floor(Math.random() * 3) + 1,
+        },
+      });
+    }
+  }
+
+  console.log("Carts and cart items created");
+
+  // --------------------------
+  // Create Wishlists and Wishlist Items
+  // --------------------------
+
+  // Create wishlists for 3 users (excluding admin)
+  const wishlists = [];
+  for (let i = 1; i < 4; i++) {
+    const wishlist = await prisma.wishlist.create({
+      data: {
+        user_id: createdUsers[i].id,
+      },
+    });
+    wishlists.push(wishlist);
+
+    // Add 2-4 random products to each wishlist
+    const numItems = Math.floor(Math.random() * 3) + 2;
+    const selectedProducts = getRandomElements(createdProducts, numItems);
+
+    for (const product of selectedProducts) {
+      await prisma.wishlist_Item.create({
+        data: {
+          wishlist_id: wishlist.id,
+          product_id: product.id,
+        },
+      });
+    }
+  }
+
+  console.log("Wishlists and wishlist items created");
+
+  // --------------------------
+  // Create Orders, Order Items, and Payments
+  // --------------------------
+
+  const orderStatuses = ["Pending", "Processing", "Shipped", "Delivered"];
+  const shipmentStatuses = ["Pending", "Delivered"];
+  const paymentStatuses = ["Unpaid", "Paid", "Cancel"];
+  const paymentMethods = ["CreditCard", "Promptpay"];
+
+  // Create 5 orders distributed among users
+  for (let i = 0; i < 5; i++) {
+    // Select a random user (excluding admin)
+    const user = createdUsers[Math.floor(Math.random() * 4) + 1];
+
+    // Create between 1-3 items for the order
+    const numItems = Math.floor(Math.random() * 3) + 1;
+    const orderItems = [];
+    let totalAmount = 0;
+
+    const selectedProducts = getRandomElements(createdProducts, numItems);
+
+    for (const product of selectedProducts) {
+      const quantity = Math.floor(Math.random() * 2) + 1;
+      const price = product.price * (1 - (product.discount || 0));
+      totalAmount += price * quantity;
+
+      orderItems.push({
+        product_id: product.id,
+        quantity,
+        price,
+      });
+    }
+
+    // Randomly decide if the order is older (for delivered orders)
+    const isOlderOrder = Math.random() > 0.5;
+    const orderDate = isOlderOrder
+      ? new Date(Date.now() - Math.random() * 60 * 24 * 60 * 60 * 1000) // Up to 60 days ago
+      : new Date(); // Current date
+
+    const shipmentStatus = isOlderOrder ? "Delivered" : "Pending";
+    const paymentStatus = isOlderOrder
+      ? "Paid"
+      : Math.random() > 0.3
+      ? "Paid"
+      : "Unpaid";
+    const orderStatus = isOlderOrder
+      ? "Delivered"
+      : orderStatuses[Math.floor(Math.random() * 3)];
+
+    // Create the order
+    const order = await prisma.order.create({
+      data: {
+        user_id: user.id,
+        order_date: orderDate,
+        updated_at: new Date(),
+        total_amount: Math.round(totalAmount),
+        status: orderStatus,
+        shipment_status: shipmentStatus,
+        payment_status: paymentStatus,
+      },
+    });
+
+    // Create order items
+    for (const item of orderItems) {
+      await prisma.order_Item.create({
+        data: {
+          order_id: order.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          price: Math.round(item.price),
+        },
+      });
+    }
+
+    // Create payment if the order is paid
+    if (paymentStatus === "Paid") {
+      await prisma.payment.create({
+        data: {
+          order_id: order.id,
+          payment_date: new Date(orderDate.getTime() + 1000 * 60 * 30), // 30 minutes after order
+          paymentmethod:
+            paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
+          amount: Math.round(totalAmount),
+          status: "Paid",
+        },
+      });
+    } else if (paymentStatus === "Unpaid") {
+      await prisma.payment.create({
+        data: {
+          order_id: order.id,
+          payment_date: new Date(),
+          paymentmethod:
+            paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
+          amount: Math.round(totalAmount),
+          status: "Unpaid",
+        },
+      });
+    }
+  }
+
+  console.log("Orders, order items, and payments created");
+
+  // --------------------------
+  // Create Reviews
+  // --------------------------
+
+  // Create 15 reviews distributed among products and users
+  for (let i = 0; i < 15; i++) {
+    const product =
+      createdProducts[Math.floor(Math.random() * createdProducts.length)];
+    const user = createdUsers[Math.floor(Math.random() * 4) + 1]; // Exclude admin
+
+    const rating = Math.floor(Math.random() * 3) + 3; // Ratings between 3-5
+    const comments = [
+      "Great product, very comfortable!",
+      "Love the design and quality.",
+      "Perfect fit, will buy again.",
+      "Very stylish and good quality.",
+      "Comfortable for all-day wear.",
+      "A bit expensive but worth it.",
+      "Exactly as described, very happy with purchase.",
+      "Fast delivery and excellent product.",
+      "The color is slightly different from the picture, but still nice.",
+      "Very happy with this purchase, highly recommend!",
+    ];
+
+    // Create a review from 1-30 days ago
+    const reviewDate = new Date(
+      Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000
+    );
+
+    await prisma.review.create({
+      data: {
+        product_id: product.id,
+        user_id: user.id,
+        rating,
+        comment: comments[Math.floor(Math.random() * comments.length)],
+        review_date: reviewDate,
+      },
+    });
+  }
+
+  console.log("Reviews created");
+}
+
+// Helper function to get random elements from an array
+function getRandomElements(array, count) {
+  const shuffled = [...array].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, count);
 }
 
 main()
