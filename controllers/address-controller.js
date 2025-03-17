@@ -2,8 +2,17 @@ const prisma = require("../config/prisma");
 
 exports.createAddress = async (req, res, next) => {
 	try {
-		const { homenum, subdistrict, district, province, country, postcode } =
-			req.body;
+		const {
+			homenum,
+			subdistrict,
+			district,
+			province,
+			country,
+			postcode,
+			phone,
+			firstname,
+			lastname,
+		} = req.body;
 		const clerkID = req.auth.userId;
 
 		console.log(req.auth);
@@ -25,6 +34,8 @@ exports.createAddress = async (req, res, next) => {
 
 		const newAddress = await prisma.address.create({
 			data: {
+				firstname,
+				lastname,
 				homenum,
 				subdistrict,
 				district,
@@ -173,8 +184,8 @@ exports.deleteAddress = async (req, res, next) => {
 
 		// Delete address
 		await prisma.address.delete({
-			where: { id: addressID },
-			// where: { id: address.id },
+			// where: { id: addressID },
+			where: { id: address.id },
 		});
 
 		console.log("Address deleted successfully:", addressID);
