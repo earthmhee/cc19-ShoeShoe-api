@@ -8,19 +8,19 @@ exports.createAddress = async (req, res, next) => {
 
     console.log(req.auth);
 
-    console.log("Request received at with Clerk ID:", clerkID);
+    console.log("Request received with Clerk ID:", clerkID);
 
     if (!clerkID) {
-      return res.status(401).json({ msg: "Unauthorized! กรุณาเข้าสู่ระบบ" });
+      return res.status(401).json({ msg: "Unauthorized! Please log in." });
     }
 
-    // ค้นหา user จาก clerkID
+    // Find user by clerkID
     const user = await prisma.user.findUnique({
-      where: { clerkID }, // ใช้ clerkID ที่ถูกต้อง
+      where: { clerkID },
     });
 
     if (!user) {
-      return res.status(404).json({ msg: "ไม่พบบัญชีผู้ใช้" });
+      return res.status(404).json({ msg: "User account not found." });
     }
 
     const newAddress = await prisma.address.create({
@@ -30,13 +30,13 @@ exports.createAddress = async (req, res, next) => {
         district,
         province,
         country,
-        postcode: parseInt(postcode), // ป้องกัน Error ประเภทข้อมูล
+        postcode: parseInt(postcode),
         userId: user.id,
       },
     });
 
     res.status(201).json({
-      msg: "Address successfully created",
+      msg: "Address successfully created.",
       address: newAddress,
     });
   } catch (error) {
@@ -45,29 +45,29 @@ exports.createAddress = async (req, res, next) => {
   }
 };
 
-// ดึงข้อมูลที่อยู่ของผู้ใช้
+// Retrieve user's addresses
 exports.getAddress = async (req, res, next) => {
   try {
     const clerkID = req.auth.userId;
 
     if (!clerkID) {
-      return res.status(401).json({ msg: "Unauthorized: กรุณาเข้าสู่ระบบ" });
+      return res.status(401).json({ msg: "Unauthorized! Please log in." });
     }
 
     console.log("Request received at /get-address with Clerk ID:", clerkID);
 
-    // ค้นหา user
+    // Find user
     const user = await prisma.user.findUnique({
       where: { clerkID },
       include: { address: true },
     });
 
     if (!user || !user.address.length) {
-      return res.status(404).json({ msg: "ไม่พบที่อยู่ของผู้ใช้" });
+      return res.status(404).json({ msg: "No addresses found for this user." });
     }
 
     res.status(200).json({
-      msg: "Addresses retrieved successfully",
+      msg: "Addresses retrieved successfully.",
       addresses: user.address,
     });
   } catch (error) {
@@ -76,37 +76,37 @@ exports.getAddress = async (req, res, next) => {
   }
 };
 
-// อัปเดตที่อยู่
+// Update address
 exports.updateAddress = async (req, res, next) => {
   try {
-    const clerkID = req.auth.userId; //
+    const clerkID = req.auth.userId;
     const { id } = req.params;
     const updateData = req.body;
 
     if (!clerkID) {
-      return res.status(401).json({ msg: "Unauthorized: กรุณาเข้าสู่ระบบ" });
+      return res.status(401).json({ msg: "Unauthorized! Please log in." });
     }
 
     console.log("Request received at /update-address with Clerk ID:", clerkID);
 
-    // ค้นหา user โดยใช้ `clerkID` ที่ถูกต้อง
+    // Find user
     const user = await prisma.user.findUnique({
       where: { clerkID },
     });
 
-    if (!user) return res.status(404).json({ msg: "ไม่พบบัญชีผู้ใช้" });
+    if (!user) return res.status(404).json({ msg: "User account not found." });
 
-    // ค้นหาที่อยู่
+    // Find address
     const address = await prisma.address.findUnique({
       where: { id: parseInt(id) },
     });
 
     if (!address) {
-      return res.status(404).json({ msg: "ไม่พบที่อยู่" });
+      return res.status(404).json({ msg: "Address not found." });
     }
 
     if (address.userId !== user.id) {
-      return res.status(403).json({ msg: "ไม่มีสิทธิ์แก้ไขที่อยู่นี้" });
+      return res.status(403).json({ msg: "You do not have permission to update this address." });
     }
 
     const updatedAddress = await prisma.address.update({
@@ -115,7 +115,7 @@ exports.updateAddress = async (req, res, next) => {
     });
 
     res.status(200).json({
-      msg: "Address successfully updated",
+      msg: "Address successfully updated.",
       address: updatedAddress,
     });
   } catch (error) {
@@ -124,55 +124,55 @@ exports.updateAddress = async (req, res, next) => {
   }
 };
 
-// ลบที่อยู่
+// Delete address
 exports.deleteAddress = async (req, res, next) => {
   try {
     const clerkID = req.auth.userId;
     const { id } = req.params;
 
     if (!clerkID) {
-      return res.status(401).json({ msg: "Unauthorized: กรุณาเข้าสู่ระบบ" });
+      return res.status(401).json({ msg: "Unauthorized! Please log in." });
     }
 
     console.log("Request received at /delete-address with Clerk ID:", clerkID);
     console.log("Address ID to delete:", id);
 
-    // ค้นหา user จาก clerkID
+    // Find user
     const user = await prisma.user.findUnique({ where: { clerkID } });
 
     if (!user) {
       console.log("User not found for Clerk ID:", clerkID);
-      return res.status(404).json({ msg: "ไม่พบบัญชีผู้ใช้" });
+      return res.status(404).json({ msg: "User account not found." });
     }
 
-    // ตรวจสอบค่า ID
+    // Validate ID
     const addressID = parseInt(id);
     if (isNaN(addressID)) {
-      return res.status(400).json({ msg: "Invalid address ID" });
+      return res.status(400).json({ msg: "Invalid address ID." });
     }
 
-    // ค้นหาที่อยู่
+    // Find address
     const address = await prisma.address.findUnique({
       where: { id: addressID },
     });
 
     if (!address) {
       console.log("Address not found with ID:", addressID);
-      return res.status(404).json({ msg: "ไม่พบที่อยู่" });
+      return res.status(404).json({ msg: "Address not found." });
     }
 
     if (address.userId !== user.id) {
       console.log("Address does not belong to user:", user.id);
-      return res.status(403).json({ msg: "ไม่มีสิทธิ์ลบที่อยู่นี้" });
+      return res.status(403).json({ msg: "You do not have permission to delete this address." });
     }
 
-    // ลบที่อยู่
+    // Delete address
     await prisma.address.delete({
       where: { id: addressID },
     });
 
     console.log("Address deleted successfully:", addressID);
-    res.status(200).json({ msg: "Address successfully deleted" });
+    res.status(200).json({ msg: "Address successfully deleted." });
   } catch (error) {
     console.error("Error while deleting address:", error);
     next(error);
