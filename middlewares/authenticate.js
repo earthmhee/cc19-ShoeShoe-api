@@ -13,7 +13,8 @@ module.exports = async (req, res, next) => {
 
 		// Fetch user details from Clerk
 		const userClerk = await clerkClient.users.getUser(clerkID);
-
+		// console.log("userClerk object:", userClerk);
+		
 		// Attach user data to the request object
 		req.user = userClerk;
 

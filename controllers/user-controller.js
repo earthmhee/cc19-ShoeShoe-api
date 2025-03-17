@@ -25,7 +25,6 @@ exports.createNewAccount = async (req, res, next) => {
 					lastname: userClerk?.lastName,
 					email: userClerk?.emailAddresses?.[0]?.emailAddress,
 					phone: userClerk?.phoneNumbers?.[0]?.phoneNumber,
-					password: "Dummy",
 					role: userClerk?.publicMetadata?.role || "Customer",
 				},
 			});
