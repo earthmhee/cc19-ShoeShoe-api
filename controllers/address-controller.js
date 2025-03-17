@@ -2,10 +2,11 @@ const prisma = require("../config/prisma");
 
 exports.createAddress = async (req, res, next) => {
   try {
-    const { homenum, subdistrict, district, province, country, postcode } = req.body;
+    const { homenum, subdistrict, district, province, country, postcode } =
+      req.body;
     const clerkID = req.auth.userId;
 
-    console.log(req.auth)
+    console.log(req.auth);
 
     console.log("Request received at with Clerk ID:", clerkID);
 
@@ -57,7 +58,7 @@ exports.getAddress = async (req, res, next) => {
 
     // ค้นหา user
     const user = await prisma.user.findUnique({
-      where: { clerkId: clerkID },
+      where: { clerkID },
       include: { address: true },
     });
 
@@ -78,7 +79,7 @@ exports.getAddress = async (req, res, next) => {
 // อัปเดตที่อยู่
 exports.updateAddress = async (req, res, next) => {
   try {
-    const clerkID = req.auth.userId;
+    const clerkID = req.auth.userId; //
     const { id } = req.params;
     const updateData = req.body;
 
@@ -88,7 +89,11 @@ exports.updateAddress = async (req, res, next) => {
 
     console.log("Request received at /update-address with Clerk ID:", clerkID);
 
-    const user = await prisma.user.findUnique({ where: { clerkId: clerkID } });
+    // ค้นหา user โดยใช้ `clerkID` ที่ถูกต้อง
+    const user = await prisma.user.findUnique({
+      where: { clerkID },
+    });
+
     if (!user) return res.status(404).json({ msg: "ไม่พบบัญชีผู้ใช้" });
 
     // ค้นหาที่อยู่
@@ -106,7 +111,7 @@ exports.updateAddress = async (req, res, next) => {
 
     const updatedAddress = await prisma.address.update({
       where: { id: address.id },
-      data: { ...updateData }, 
+      data: { ...updateData },
     });
 
     res.status(200).json({
@@ -130,30 +135,46 @@ exports.deleteAddress = async (req, res, next) => {
     }
 
     console.log("Request received at /delete-address with Clerk ID:", clerkID);
+    console.log("Address ID to delete:", id);
 
-    const user = await prisma.user.findUnique({ where: { clerkId: clerkID } });
-    if (!user) return res.status(404).json({ msg: "ไม่พบบัญชีผู้ใช้" });
+    // ค้นหา user จาก clerkID
+    const user = await prisma.user.findUnique({ where: { clerkID } });
+
+    if (!user) {
+      console.log("User not found for Clerk ID:", clerkID);
+      return res.status(404).json({ msg: "ไม่พบบัญชีผู้ใช้" });
+    }
+
+    // ตรวจสอบค่า ID
+    const addressID = parseInt(id);
+    if (isNaN(addressID)) {
+      return res.status(400).json({ msg: "Invalid address ID" });
+    }
 
     // ค้นหาที่อยู่
     const address = await prisma.address.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: addressID },
     });
 
     if (!address) {
+      console.log("Address not found with ID:", addressID);
       return res.status(404).json({ msg: "ไม่พบที่อยู่" });
     }
 
     if (address.userId !== user.id) {
+      console.log("Address does not belong to user:", user.id);
       return res.status(403).json({ msg: "ไม่มีสิทธิ์ลบที่อยู่นี้" });
     }
 
+    // ลบที่อยู่
     await prisma.address.delete({
-      where: { id: address.id },
+      where: { id: addressID },
     });
 
+    console.log("Address deleted successfully:", addressID);
     res.status(200).json({ msg: "Address successfully deleted" });
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error while deleting address:", error);
     next(error);
   }
 };
