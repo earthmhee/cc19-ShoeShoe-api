@@ -7,6 +7,7 @@ exports.createNewAccount = async (req, res, next) => {
 		const { id } = req.user;
 		const userClerk = req.user;
 		const userId = userClerk.id;
+		const userRole = userClerk?.publicMetadata?.role
 		console.log("User Id : ", id);
 		// look for user
 		const rs = await prisma.user.findUnique({
@@ -16,6 +17,7 @@ exports.createNewAccount = async (req, res, next) => {
 		});
 		// const role = "Customer"
 		// หากเป็น null (สร้าง user ครั้งแรก) ทำการสร้างผู้ใช้ใน prisma
+		console.log(rs)
 		if (rs === null) {
 			const result = await prisma.user.create({
 				data: {
@@ -29,11 +31,28 @@ exports.createNewAccount = async (req, res, next) => {
 				},
 			});
 			// ดัน Metadata ไปที่ Clerk
-			await clerkClient.users.updateUserMetadata(userId, {
-				publicMetadata: {
-					role: "Customer",
+			if (userRole !== 'Admin') {
+				await clerkClient.users.updateUserMetadata(userId, {
+					publicMetadata: {
+						role: "Customer",
+					},
+				});
+			}
+		}
+		const userRoleDB = await prisma.user.findUnique({
+			where: {
+				clerkID: id
+			}
+		})
+		if (userRole !== userRoleDB.role){
+			const result = await prisma.user.update({
+				where: {
+					clerkID: id
 				},
-			});
+				data: {
+					role: userRole
+				}
+			})
 		}
 
 		res.status(200).json({ msg: "My account create", rs });
