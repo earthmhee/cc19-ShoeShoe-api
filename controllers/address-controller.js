@@ -15,7 +15,7 @@ exports.createAddress = async (req, res, next) => {
     }
 
     // Find user by clerkID
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
       where: { clerkID },
     });
 
@@ -29,6 +29,7 @@ exports.createAddress = async (req, res, next) => {
         subdistrict,
         district,
         province,
+        phone,
         country,
         postcode: parseInt(postcode),
         userId: user.id,
@@ -106,7 +107,9 @@ exports.updateAddress = async (req, res, next) => {
     }
 
     if (address.userId !== user.id) {
-      return res.status(403).json({ msg: "You do not have permission to update this address." });
+      return res
+        .status(403)
+        .json({ msg: "You do not have permission to update this address." });
     }
 
     const updatedAddress = await prisma.address.update({
@@ -163,7 +166,9 @@ exports.deleteAddress = async (req, res, next) => {
 
     if (address.userId !== user.id) {
       console.log("Address does not belong to user:", user.id);
-      return res.status(403).json({ msg: "You do not have permission to delete this address." });
+      return res
+        .status(403)
+        .json({ msg: "You do not have permission to delete this address." });
     }
 
     // Delete address

@@ -58,6 +58,7 @@ model Address {
   district    String?
   province    String
   country     String  @default("Thailand")
+  phone       String
   postcode    Int
   userId      Int     @map("user_id")
   user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
