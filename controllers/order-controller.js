@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma");
+const { subscribe } = require("../routes/user-route");
 const createError = require("../utils/createError");
 
 // Place order (Feature ID: 18)
@@ -89,11 +90,24 @@ exports.viewOrder = async (req, res, next) => {
 							firstname: true,
 							lastname: true,
 							phone: true,
-							address: true,
+							address: {
+								select: {
+									firstname: true,
+									lastname: true,
+									phone: true,
+									homenum: true,
+									subdistrict: true,
+									district: true,
+									province: true,
+									country: true,
+									postcode: true,
+								},
+							},
 						},
 					},
 				},
 			});
+			console.log(order);
 
 			if (!order) {
 				return res.status(404).json({ msg: "Order not found" });
@@ -105,7 +119,12 @@ exports.viewOrder = async (req, res, next) => {
 			});
 		} else {
 			// Get all orders for authenticated user
-			const user_id = req.user?.id;
+			const clerk_id = req.user?.id;
+			const user = await prisma.user.findUnique({
+				where: { clerkID: clerk_id },
+			});
+			const user_id = user.id;
+			console.log(`fuckkkkkkkkkkkkkkkkk ${user_id}`);
 
 			if (!user_id) {
 				return res.status(401).json({ msg: "User not authenticated" });
