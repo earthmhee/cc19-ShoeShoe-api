@@ -1081,6 +1081,7 @@ async function main() {
         district: "Chatuchak",
         province: "Bangkok",
         postcode: 10900,
+        phone: "0812345678",
       },
     },
     {
@@ -1097,6 +1098,7 @@ async function main() {
         district: "Bang Rak",
         province: "Bangkok",
         postcode: 10500,
+        phone: "0823456789",
       },
     },
     {
@@ -1113,6 +1115,7 @@ async function main() {
         district: "Pathum Wan",
         province: "Bangkok",
         postcode: 10330,
+        phone: "0834567890",
       },
     },
     {
@@ -1129,6 +1132,7 @@ async function main() {
         district: "Watthana",
         province: "Bangkok",
         postcode: 10110,
+        phone: "0845678901",
       },
     },
     {
@@ -1145,6 +1149,7 @@ async function main() {
         district: "Khlong Toei",
         province: "Bangkok",
         postcode: 10110,
+        phone: "0856789012",
       },
     },
   ];
@@ -1172,34 +1177,44 @@ async function main() {
   console.log("Users and addresses created");
 
   // --------------------------
-  // Create Carts and Cart Items
-  // --------------------------
+// Create Carts and Cart Items
+// --------------------------
 
-  // Create carts for 3 users (excluding admin)
-  const carts = [];
-  for (let i = 1; i < 4; i++) {
-    const cart = await prisma.cart.create({
-      data: {
-        user_id: createdUsers[i].id,
-      },
-    });
-    carts.push(cart);
-
-    // Add 1-3 random products to each cart
-    const numItems = Math.floor(Math.random() * 3) + 1;
-    const selectedProducts = getRandomElements(createdProducts, numItems);
-
-    for (const product of selectedProducts) {
-      await prisma.cart_Item.create({
-        data: {
-          cart_id: cart.id,
-          product_id: product.id,
-          quantity: Math.floor(Math.random() * 3) + 1,
-        },
-      });
+// Create carts for 3 users (excluding admin)
+const carts = [];
+for (let i = 1; i < 4; i++) {
+  const cart = await prisma.cart.create({
+    data: {
+      user_id: createdUsers[i].id,
     }
-  }
+  });
+  carts.push(cart);
 
+  // Add 1-3 random products to each cart
+  const numItems = Math.floor(Math.random() * 3) + 1;
+  const selectedProducts = getRandomElements(createdProducts, numItems);
+
+  for (const product of selectedProducts) {
+    // Get a random size for the product's gender
+    const availableSizes = product.gender === 'Men' ? menSizes : womenSizes;
+    const randomSize = availableSizes[Math.floor(Math.random() * availableSizes.length)];
+
+    await prisma.cart_Item.create({
+      data: {
+        quantity: Math.floor(Math.random() * 3) + 1,
+        cart: {
+          connect: { id: cart.id }
+        },
+        product: {
+          connect: { id: product.id }
+        },
+        Size: {
+          connect: { id: randomSize.id }
+        }
+      }
+    });
+  }
+}
   console.log("Carts and cart items created");
 
   // --------------------------

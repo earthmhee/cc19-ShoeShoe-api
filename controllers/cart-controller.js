@@ -2,7 +2,7 @@
 
 // exports.viewcart = async (req, res, next) => {
 //   try {
-//     const { clerkID } = req.user; // รับค่า clerkID จาก Clerk Authentication
+//     const clerkID = req.auth.userId; // รับค่า clerkID จาก Clerk Authentication
 //     if (!clerkID) {
 //       return res.status(401).json({ msg: "Unauthorized: กรุณาเข้าสู่ระบบ" });
 //     }
@@ -33,7 +33,7 @@
 
 // exports.addcart = async (req, res, next) => {
 //   try {
-//     const { clerkID } = req.user; // รับค่า clerkID จาก Clerk Authentication
+//     const clerkID = req.auth.userId; // รับค่า clerkID จาก Clerk Authentication
 //     const { product_id, quantity, sizeId } = req.body; // รับค่า product_id และจำนวนสินค้า
 
 //     if (!clerkID) {
@@ -111,13 +111,15 @@
 //   }
 // };
 
+
+
 // controllers/cartController.js
 const prisma = require("../config/prisma");
 
 // View cart
 exports.viewcart = async (req, res, next) => {
   try {
-    const  clerkID  = req.auth.userId
+    const clerkID  = req.auth.userId
     console.log(req.auth.userId);
     
     if (!clerkID) {
@@ -135,7 +137,7 @@ exports.viewcart = async (req, res, next) => {
             cartItems: { 
               include: { 
                 product: true,
-                size: true  // Include size information
+                Size: true  // Include size information
               } 
             } 
           } 
@@ -213,8 +215,10 @@ exports.viewcart = async (req, res, next) => {
 // Add to cart
 exports.addcart = async (req, res, next) => {
   try {
-    const { clerkID } = req.user;
+    const clerkID = req.auth.userId;
     const { product_id, quantity, sizeId } = req.body;
+    console.log(req.body);
+    
 
     if (!clerkID) {
       return res.status(401).json({ msg: "Unauthorized: กรุณาเข้าสู่ระบบ" });
@@ -277,11 +281,18 @@ exports.addcart = async (req, res, next) => {
     }
 
     // Check if item already exists in cart
+    // const existingCartItem = await prisma.cart_Item.findFirst({
+    //   where: {
+    //     cart_id: user.cart.id,
+    //     product_id: parseInt(product_id),
+    //     size_id: parseInt(sizeId)
+    //   },
+    // });
     const existingCartItem = await prisma.cart_Item.findFirst({
       where: {
         cart_id: user.cart.id,
         product_id: parseInt(product_id),
-        size_id: parseInt(sizeId)
+        sizeId: parseInt(sizeId)
       },
     });
 
@@ -295,10 +306,16 @@ exports.addcart = async (req, res, next) => {
       // Add new item to cart
       await prisma.cart_Item.create({
         data: {
-          cart_id: user.cart.id,
-          product_id: parseInt(product_id),
-          size_id: parseInt(sizeId),
           quantity: parseInt(quantity),
+          product: {
+            connect: { id: parseInt(product_id) }
+          },
+          Size: {
+            connect: { id: parseInt(sizeId) }
+          },
+          cart: {
+            connect: { id: user.cart.id }
+          }
         },
       });
     }
@@ -312,7 +329,7 @@ exports.addcart = async (req, res, next) => {
             cartItems: { 
               include: { 
                 product: true,
-                size: true
+                Size: true
               } 
             } 
           } 
@@ -380,7 +397,7 @@ exports.addcart = async (req, res, next) => {
 // Update cart item quantity
 exports.updateCartItem = async (req, res, next) => {
   try {
-    const { clerkID } = req.user;
+    const clerkID = req.auth.userId;
     const { cartItemId } = req.params;
     const { quantity } = req.body;
 
@@ -389,23 +406,33 @@ exports.updateCartItem = async (req, res, next) => {
     }
 
     if (!cartItemId || !quantity) {
-      return res.status(400).json({ msg: "กรุณาระบุรายการสินค้าและจำนวนให้ครบถ้วน" });
+      return res.status(400).json({ msg: "กรุณาระบุรายการสินค้าและจำนวนที่ต้องการแก้ไข" });
+    }
+
+    // Ensure quantity is a positive integer
+    const newQuantity = parseInt(quantity);
+    if (isNaN(newQuantity) || newQuantity <= 0) {
+      return res.status(400).json({ msg: "จำนวนสินค้าต้องเป็นตัวเลขที่มากกว่า 0" });
     }
 
     console.log("Request received at /update-cart-item with Clerk ID:", clerkID);
-    console.log("Cart Item ID:", cartItemId, "New Quantity:", quantity);
+    console.log("Cart Item ID:", cartItemId, "New Quantity:", newQuantity);
 
-    // Find user and cart
+    // Find user
     const user = await prisma.user.findUnique({
       where: { clerkID },
       include: { cart: true },
     });
 
-    if (!user || !user.cart) {
+    if (!user) {
+      return res.status(404).json({ msg: "ไม่พบบัญชีผู้ใช้" });
+    }
+
+    if (!user.cart) {
       return res.status(404).json({ msg: "ไม่พบตะกร้าสินค้า" });
     }
 
-    // Find cart item
+    // Check if the cart item exists and belongs to the user
     const cartItem = await prisma.cart_Item.findFirst({
       where: {
         id: parseInt(cartItemId),
@@ -413,30 +440,34 @@ exports.updateCartItem = async (req, res, next) => {
       },
       include: {
         product: true,
-        size: true
+        Size: true
       }
     });
 
     if (!cartItem) {
-      return res.status(404).json({ msg: "ไม่พบรายการสินค้าในตะกร้า" });
+      return res.status(404).json({ msg: "ไม่พบรายการสินค้าในตะกร้า หรือรายการนี้ไม่ได้อยู่ในตะกร้าของคุณ" });
     }
 
     // Check stock availability
     const stockItem = await prisma.stock.findFirst({
       where: {
         product_id: cartItem.product_id,
-        size_id: cartItem.size_id
+        size_id: cartItem.sizeId
       }
     });
 
-    if (!stockItem || stockItem.stock_quantity < parseInt(quantity)) {
+    if (!stockItem || stockItem.stock_quantity < newQuantity) {
       return res.status(400).json({ msg: "สินค้าไม่เพียงพอ" });
     }
 
-    // Update cart item quantity
+    // Update the cart item quantity
     await prisma.cart_Item.update({
-      where: { id: parseInt(cartItemId) },
-      data: { quantity: parseInt(quantity) },
+      where: {
+        id: parseInt(cartItemId)
+      },
+      data: {
+        quantity: newQuantity
+      }
     });
 
     // Get updated cart for response
@@ -448,7 +479,7 @@ exports.updateCartItem = async (req, res, next) => {
             cartItems: { 
               include: { 
                 product: true,
-                size: true
+                Size: true
               } 
             } 
           } 
@@ -459,7 +490,7 @@ exports.updateCartItem = async (req, res, next) => {
     // Format cart items for response
     const items = updatedUser.cart.cartItems.map(item => {
       const product = item.product;
-      const size = item.size;
+      const size = item.Size; // Make sure this matches your Prisma schema
       
       // Calculate discounted price
       const price = product.price;
@@ -499,16 +530,16 @@ exports.updateCartItem = async (req, res, next) => {
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
     const totalPrice = items.reduce((sum, item) => sum + (item.discountedPrice * item.quantity), 0);
 
-    console.log("Cart item updated successfully!");
+    console.log("Cart item quantity updated successfully!");
 
     res.status(200).json({
-      msg: "Update Cart Item Success",
+      msg: "Update Cart Success",
       items,
       totalItems,
       totalPrice
     });
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error updating cart item:", error);
     next(error);
   }
 };
@@ -516,27 +547,35 @@ exports.updateCartItem = async (req, res, next) => {
 // Remove item from cart
 exports.removeCartItem = async (req, res, next) => {
   try {
-    const { clerkID } = req.user;
+    const clerkID = req.auth.userId;
     const { cartItemId } = req.params;
 
     if (!clerkID) {
       return res.status(401).json({ msg: "Unauthorized: กรุณาเข้าสู่ระบบ" });
     }
 
+    if (!cartItemId) {
+      return res.status(400).json({ msg: "กรุณาระบุรายการสินค้าที่ต้องการลบ" });
+    }
+
     console.log("Request received at /remove-cart-item with Clerk ID:", clerkID);
     console.log("Cart Item ID:", cartItemId);
 
-    // Find user and cart
+    // Find user
     const user = await prisma.user.findUnique({
       where: { clerkID },
       include: { cart: true },
     });
 
-    if (!user || !user.cart) {
+    if (!user) {
+      return res.status(404).json({ msg: "ไม่พบบัญชีผู้ใช้" });
+    }
+
+    if (!user.cart) {
       return res.status(404).json({ msg: "ไม่พบตะกร้าสินค้า" });
     }
 
-    // Find cart item
+    // Check if the cart item exists and belongs to the user
     const cartItem = await prisma.cart_Item.findFirst({
       where: {
         id: parseInt(cartItemId),
@@ -545,12 +584,14 @@ exports.removeCartItem = async (req, res, next) => {
     });
 
     if (!cartItem) {
-      return res.status(404).json({ msg: "ไม่พบรายการสินค้าในตะกร้า" });
+      return res.status(404).json({ msg: "ไม่พบรายการสินค้าในตะกร้า หรือรายการนี้ไม่ได้อยู่ในตะกร้าของคุณ" });
     }
 
-    // Delete cart item
+    // Delete the cart item
     await prisma.cart_Item.delete({
-      where: { id: parseInt(cartItemId) },
+      where: {
+        id: parseInt(cartItemId)
+      }
     });
 
     // Get updated cart for response
@@ -562,7 +603,7 @@ exports.removeCartItem = async (req, res, next) => {
             cartItems: { 
               include: { 
                 product: true,
-                size: true
+                Size: true
               } 
             } 
           } 
@@ -573,7 +614,7 @@ exports.removeCartItem = async (req, res, next) => {
     // Format cart items for response
     const items = updatedUser.cart.cartItems.map(item => {
       const product = item.product;
-      const size = item.size;
+      const size = item.Size; // Make sure this matches your Prisma schema
       
       // Calculate discounted price
       const price = product.price;
@@ -613,16 +654,16 @@ exports.removeCartItem = async (req, res, next) => {
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
     const totalPrice = items.reduce((sum, item) => sum + (item.discountedPrice * item.quantity), 0);
 
-    console.log("Cart item removed successfully!");
+    console.log("Product removed from cart successfully!");
 
     res.status(200).json({
-      msg: "Remove Cart Item Success",
+      msg: "Remove from Cart Success",
       items,
       totalItems,
       totalPrice
     });
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error removing item from cart:", error);
     next(error);
   }
 };
@@ -630,7 +671,7 @@ exports.removeCartItem = async (req, res, next) => {
 // Clear cart
 exports.clearCart = async (req, res, next) => {
   try {
-    const { clerkID } = req.user;
+    const clerkID = req.auth.userId;
 
     if (!clerkID) {
       return res.status(401).json({ msg: "Unauthorized: กรุณาเข้าสู่ระบบ" });
@@ -670,7 +711,7 @@ exports.clearCart = async (req, res, next) => {
 // Checkout
 exports.checkout = async (req, res, next) => {
   try {
-    const { clerkID } = req.user;
+    const clerkID = req.auth.userId;
     const { shippingDetails } = req.body;
 
     if (!clerkID) {
