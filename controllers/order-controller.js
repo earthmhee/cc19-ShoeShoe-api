@@ -5,7 +5,7 @@ const createError = require("../utils/createError");
 // Place order (Feature ID: 18)
 exports.placeOrder = async (req, res, next) => {
 	try {
-		const { user_id, orderItems, total_amount } = req.body;
+		const { user_id, orderItems, addressId  } = req.body;
 
 		// Validate request body
 		if (
@@ -13,7 +13,7 @@ exports.placeOrder = async (req, res, next) => {
 			!orderItems ||
 			!Array.isArray(orderItems) ||
 			orderItems.length === 0 ||
-			!total_amount
+		  !addressId
 		) {
 			return res.status(400).json({
 				msg: "Invalid order data. Please provide user_id, orderItems array, and total_amount",
@@ -29,13 +29,30 @@ exports.placeOrder = async (req, res, next) => {
 			return res.status(404).json({ msg: "User not found" });
 		}
 
-		// Create order with order items in a transaction
+    // Check if address exists and belongs to the user
+		const address = await prisma.address.findFirst({
+			where: { 
+				id: parseInt(addressId),
+				userId: parseInt(user_id)
+			},
+		});
+
+		if (!address) {
+			return res.status(404).json({ msg: "Address not found or does not belong to the user" });
+		}
+
+
+				// Create order with order items in a transaction
 		const newOrder = await prisma.$transaction(async (prisma) => {
+      //Sum prize
+      const total_amount = orderItems.reduce((total, item) => {
+        return total + (item.discountedPrice * item.quantity);
+      }, 0);
 			// Create order
 			const order = await prisma.order.create({
 				data: {
 					user_id: parseInt(user_id),
-					total_amount: parseInt(total_amount),
+					total_amount: parseInt(total_amount) || 0,
 					shipment_status: "Pending",
 					payment_status: "Unpaid",
 				},
@@ -48,7 +65,7 @@ exports.placeOrder = async (req, res, next) => {
 						order_id: order.id,
 						product_id: parseInt(item.product_id),
 						quantity: parseInt(item.quantity),
-						price: parseInt(item.price),
+						price: parseInt(item.discountedPrice),
 					},
 				});
 			}
@@ -56,9 +73,26 @@ exports.placeOrder = async (req, res, next) => {
 			return order;
 		});
 
+		// Return the order with address details
+		const orderWithAddress = {
+			...newOrder,
+			shipping_address: {
+				id: address.id,
+				homenum: address.homenum,
+				firstname: address.firstname,
+				lastname: address.lastname,
+				subdistrict: address.subdistrict,
+				district: address.district,
+				province: address.province,
+				country: address.country,
+				phone: address.phone,
+				postcode: address.postcode
+			}
+		};
+
 		res.status(201).json({
 			msg: "Order placed successfully",
-			data: newOrder,
+			data: orderWithAddress,
 		});
 	} catch (error) {
 		console.error("Order placement error:", error);
@@ -66,7 +100,7 @@ exports.placeOrder = async (req, res, next) => {
 	}
 };
 
-// View order (Feature ID: 20)
+// View order 
 exports.viewOrder = async (req, res, next) => {
 	try {
 		const { id } = req.params;
@@ -92,6 +126,7 @@ exports.viewOrder = async (req, res, next) => {
 							phone: true,
 							address: {
 								select: {
+									id: true,  // Added to return the address ID
 									firstname: true,
 									lastname: true,
 									phone: true,
@@ -107,7 +142,6 @@ exports.viewOrder = async (req, res, next) => {
 					},
 				},
 			});
-			console.log(order);
 
 			if (!order) {
 				return res.status(404).json({ msg: "Order not found" });
@@ -123,15 +157,20 @@ exports.viewOrder = async (req, res, next) => {
 			const user = await prisma.user.findUnique({
 				where: { clerkID: clerk_id },
 			});
-			const user_id = user.id;
-			console.log(`fuckkkkkkkkkkkkkkkkk ${user_id}`);
-
-			if (!user_id) {
+			
+			if (!user) {
 				return res.status(401).json({ msg: "User not authenticated" });
 			}
+			
+			const user_id = user.id;
+
+			// Get user's addresses
+			const userAddresses = await prisma.address.findMany({
+				where: { userId: user_id }
+			});
 
 			const orders = await prisma.order.findMany({
-				where: { user_id: parseInt(user_id) },
+				where: { user_id: user_id },
 				include: {
 					orderItems: {
 						include: {
@@ -147,7 +186,10 @@ exports.viewOrder = async (req, res, next) => {
 
 			res.status(200).json({
 				msg: "User orders retrieved successfully",
-				data: orders,
+				data: {
+					orders: orders,
+					addresses: userAddresses
+				}
 			});
 		}
 	} catch (error) {
@@ -155,8 +197,7 @@ exports.viewOrder = async (req, res, next) => {
 		next(error);
 	}
 };
-
-// Delete order (Feature ID: 19)
+// Delete order 
 exports.deleteOrder = async (req, res, next) => {
 	try {
 		const { id } = req.params;
