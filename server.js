@@ -24,17 +24,17 @@ const adminOrderRoute = require("./routes/admin-order-route");
 
 // import Middlewares ...
 app.use(
-  morgan(":method :url :status :res[content-length] - :response-time ms")
+	morgan(":method :url :status :res[content-length] - :response-time ms")
 ); // check logging request
 app.use(helmet()); // security for app
 // ตั้งค่า CORS
 app.use(
-  cors({
-    origin: "http://localhost:5173", // ระบุ origin ของ frontend
-    credentials: true, // อนุญาตให้ส่ง credentials
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS",],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
+	cors({
+		origin: "http://localhost:5173", // ระบุ origin ของ frontend
+		credentials: true, // อนุญาตให้ส่ง credentials
+		methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+		allowedHeaders: ["Content-Type", "Authorization"],
+	})
 );
 
 // จัดการ preflight request (OPTIONS)
@@ -51,7 +51,7 @@ app.use("/api/order", orderRoute);
 app.use("/api/payment", paymentRoute);
 app.use("/api/address", addressRoute);
 app.use("/api/stock", stockRoute);
-app.use('/api/admin', adminOrderRoute);
+app.use("/api/admin", adminOrderRoute);
 
 // notFound - send 404
 app.use(notFound);
