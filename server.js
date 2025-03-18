@@ -20,6 +20,7 @@ const orderRoute = require("./routes/order-route");
 const paymentRoute = require("./routes/payment-route");
 const addressRoute = require("./routes/address-route");
 const stockRoute = require("./routes/stock-route");
+const adminOrderRoute = require("./routes/admin-order-route");
 
 // import Middlewares ...
 app.use(
@@ -31,7 +32,7 @@ app.use(
   cors({
     origin: "http://localhost:5173", // ระบุ origin ของ frontend
     credentials: true, // อนุญาตให้ส่ง credentials
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS",],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -50,6 +51,7 @@ app.use("/api/order", orderRoute);
 app.use("/api/payment", paymentRoute);
 app.use("/api/address", addressRoute);
 app.use("/api/stock", stockRoute);
+app.use('/api/admin', adminOrderRoute);
 
 // notFound - send 404
 app.use(notFound);
