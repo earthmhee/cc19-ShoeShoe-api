@@ -472,11 +472,9 @@ exports.updateCartItem = async (req, res, next) => {
 		});
 
 		if (!cartItem) {
-			return res
-				.status(404)
-				.json({
-					msg: "ไม่พบรายการสินค้าในตะกร้า หรือรายการนี้ไม่ได้อยู่ในตะกร้าของคุณ",
-				});
+			return res.status(404).json({
+				msg: "ไม่พบรายการสินค้าในตะกร้า หรือรายการนี้ไม่ได้อยู่ในตะกร้าของคุณ",
+			});
 		}
 
 		// Check stock availability
@@ -625,11 +623,9 @@ exports.removeCartItem = async (req, res, next) => {
 		});
 
 		if (!cartItem) {
-			return res
-				.status(404)
-				.json({
-					msg: "ไม่พบรายการสินค้าในตะกร้า หรือรายการนี้ไม่ได้อยู่ในตะกร้าของคุณ",
-				});
+			return res.status(404).json({
+				msg: "ไม่พบรายการสินค้าในตะกร้า หรือรายการนี้ไม่ได้อยู่ในตะกร้าของคุณ",
+			});
 		}
 
 		// Delete the cart item
@@ -774,10 +770,12 @@ exports.checkout = async (req, res, next) => {
 			return res.status(400).json({ msg: "กรุณาระบุข้อมูลการจัดส่ง" });
 		}
 
+		console.log(shippingDetails);
+
 		console.log("Request received at /checkout with Clerk ID:", clerkID);
 
 		// Find user and cart with items
-		const user = await prisma.user.findUnique({
+		const user = await prisma.user.findFirst({
 			where: { clerkID },
 			include: {
 				cart: {
@@ -785,7 +783,7 @@ exports.checkout = async (req, res, next) => {
 						cartItems: {
 							include: {
 								product: true,
-								size: true,
+								Size: true,
 							},
 						},
 					},
@@ -842,11 +840,8 @@ exports.checkout = async (req, res, next) => {
 				user_id: user.id,
 				total_amount: orderTotal,
 				status: "pending",
-				shipping_address: shippingDetails.address,
-				shipping_city: shippingDetails.city,
-				shipping_postal_code: shippingDetails.postalCode,
-				shipping_country: shippingDetails.country,
-				order_items: {
+				addressId: shippingDetails,
+				orderItems: {
 					create: orderItems.map((item) => ({
 						product_id: item.product_id,
 						size_id: item.size_id,
@@ -854,6 +849,8 @@ exports.checkout = async (req, res, next) => {
 						price: item.price,
 					})),
 				},
+				shipment_status: "Pending",
+				payment_status: "Unpaid",
 			},
 		});
 

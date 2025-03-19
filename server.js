@@ -30,7 +30,7 @@ app.use(helmet()); // security for app
 // ตั้งค่า CORS
 app.use(
 	cors({
-		origin: "http://localhost:5173", // ระบุ origin ของ frontend
+		origin: "http://localhost:5173",
 		credentials: true, // อนุญาตให้ส่ง credentials
 		methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 		allowedHeaders: ["Content-Type", "Authorization"],
