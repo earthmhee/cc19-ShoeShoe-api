@@ -53,7 +53,7 @@ model User {
 
 model Address {
   id          Int     @id @default(autoincrement())
-  homenum     String  @unique
+  homenum     String
   firstname   String?
   lastname    String?
   subdistrict String?
@@ -64,6 +64,7 @@ model Address {
   postcode    Int
   userId      Int     @map("user_id")
   user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order       Order[]
 
   @@map("address")
 }
@@ -174,6 +175,8 @@ model Order {
   user            User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
   orderItems      Order_Item[]
   payment         Payment?
+  address         Address?       @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  addressId       Int?
 
   @@map("order")
 }
