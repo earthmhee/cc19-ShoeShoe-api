@@ -809,8 +809,9 @@ exports.checkout = async (req, res, next) => {
 			});
 
 			if (!stockItem || stockItem.stock_quantity < item.quantity) {
+				console.log(item);
 				return res.status(400).json({
-					msg: `สินค้า ${item.product.productname} ขนาด ${item.size.us_size} มีไม่เพียงพอ`,
+					msg: `สินค้า ${item.product.productname} ขนาด ${item.Size.us_size} มีไม่เพียงพอ`,
 				});
 			}
 
