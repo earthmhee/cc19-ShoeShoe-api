@@ -111,11 +111,12 @@ model Stock {
 }
 
 model Size {
-  id      Int         @id @default(autoincrement()) @map("size_id")
-  us_size Int
-  gender  Gender
-  stock   Stock[]
-  cart    Cart_Item[]
+  id         Int          @id @default(autoincrement()) @map("size_id")
+  us_size    Int
+  gender     Gender
+  stock      Stock[]
+  cart       Cart_Item[]
+  orderItems Order_Item[]
 
   @@map("size")
 }
@@ -185,11 +186,12 @@ model Order_Item {
   id         Int     @id @default(autoincrement()) @map("order_item_id")
   order_id   Int
   product_id Int
-  size_id    Int
   quantity   Int
   price      Int
   order      Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
   product    Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  Size       Size?   @relation(fields: [size_id], references: [id])
+  size_id    Int?
 
   @@map("order_item")
 }
