@@ -1316,6 +1316,7 @@ async function main() {
 				data: {
 					order_id: order.id,
 					product_id: item.product_id,
+					size_id: 3,
 					quantity: item.quantity,
 					price: Math.round(item.price),
 				},
