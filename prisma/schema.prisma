@@ -185,6 +185,7 @@ model Order_Item {
   id         Int     @id @default(autoincrement()) @map("order_item_id")
   order_id   Int
   product_id Int
+  size_id    Int
   quantity   Int
   price      Int
   order      Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
