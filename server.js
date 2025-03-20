@@ -21,6 +21,7 @@ const paymentRoute = require("./routes/payment-route");
 const addressRoute = require("./routes/address-route");
 const stockRoute = require("./routes/stock-route");
 const adminOrderRoute = require("./routes/admin-order-route");
+const aiRoute = require("./routes/ai-route");
 
 // import Middlewares ...
 app.use(
@@ -52,6 +53,7 @@ app.use("/api/payment", paymentRoute);
 app.use("/api/address", addressRoute);
 app.use("/api/stock", stockRoute);
 app.use("/api/admin", adminOrderRoute);
+app.use("/api/ai", aiRoute)
 
 // notFound - send 404
 app.use(notFound);
