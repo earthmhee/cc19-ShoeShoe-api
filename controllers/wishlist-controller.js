@@ -4,11 +4,27 @@ const createError = require("../utils/createError");
 // Get user's wishlist
 exports.getWishlist = async (req, res, next) => {
   try {
-    const { id: userId } = req.user;
-
+    // Changed to match your authentication pattern
+    const clerkID = req.auth.userId;
+    
+    console.log("Request received at /wishlist with Clerk ID:", clerkID);
+    
+    if (!clerkID) {
+      return res.status(401).json({ msg: "Unauthorized: Please log in" });
+    }
+    
+    // Find user by clerkID
+    const user = await prisma.user.findUnique({
+      where: { clerkID },
+    });
+    
+    if (!user) {
+      return res.status(404).json({ msg: "User account not found" });
+    }
+    
     // Check if the user has a wishlist
     let wishlist = await prisma.wishlist.findUnique({
-      where: { user_id: parseInt(userId) },
+      where: { user_id: user.id },
       include: {
         wishlistItems: {
           include: {
@@ -22,11 +38,11 @@ exports.getWishlist = async (req, res, next) => {
       }
     });
 
-    // If no wishlist exists, create an empty one
+    // If no wishlist exists, create an empty data structure
     if (!wishlist) {
       wishlist = {
         id: null,
-        user_id: parseInt(userId),
+        user_id: user.id,
         created_at: new Date(),
         wishlistItems: []
       };
@@ -45,11 +61,28 @@ exports.getWishlist = async (req, res, next) => {
 // Add product to wishlist
 exports.addToWishlist = async (req, res, next) => {
   try {
-    const { id: userId } = req.user;
+    // Changed to match your authentication pattern
+    const clerkID = req.auth.userId;
     const { product_id } = req.body;
 
+    console.log("Request received at /wishlist with Clerk ID:", clerkID);
+    console.log("Product ID:", product_id);
+
+    if (!clerkID) {
+      return res.status(401).json({ msg: "Unauthorized: Please log in" });
+    }
+
     if (!product_id) {
-      return next(createError(400, "Product ID is required"));
+      return res.status(400).json({ msg: "Product ID is required" });
+    }
+
+    // Find user by clerkID
+    const user = await prisma.user.findUnique({
+      where: { clerkID },
+    });
+
+    if (!user) {
+      return res.status(404).json({ msg: "User account not found" });
     }
 
     // Check if product exists
@@ -58,18 +91,18 @@ exports.addToWishlist = async (req, res, next) => {
     });
 
     if (!product) {
-      return next(createError(404, "Product not found"));
+      return res.status(404).json({ msg: "Product not found" });
     }
 
     // Find or create a wishlist for the user
     let wishlist = await prisma.wishlist.findUnique({
-      where: { user_id: parseInt(userId) }
+      where: { user_id: user.id }
     });
 
     if (!wishlist) {
       wishlist = await prisma.wishlist.create({
         data: {
-          user_id: parseInt(userId)
+          user_id: user.id
         }
       });
     }
@@ -113,16 +146,33 @@ exports.addToWishlist = async (req, res, next) => {
 // Remove product from wishlist
 exports.removeFromWishlist = async (req, res, next) => {
   try {
-    const { id: userId } = req.user;
+    // Changed to match your authentication pattern
+    const clerkID = req.auth.userId;
     const { id: productId } = req.params;
+
+    console.log("Request received at /wishlist/:id with Clerk ID:", clerkID);
+    console.log("Product ID to remove:", productId);
+
+    if (!clerkID) {
+      return res.status(401).json({ msg: "Unauthorized: Please log in" });
+    }
+
+    // Find user by clerkID
+    const user = await prisma.user.findUnique({
+      where: { clerkID },
+    });
+
+    if (!user) {
+      return res.status(404).json({ msg: "User account not found" });
+    }
 
     // Check if the user has a wishlist
     const wishlist = await prisma.wishlist.findUnique({
-      where: { user_id: parseInt(userId) }
+      where: { user_id: user.id }
     });
 
     if (!wishlist) {
-      return next(createError(404, "Wishlist not found"));
+      return res.status(404).json({ msg: "Wishlist not found" });
     }
 
     // Find the wishlist item
@@ -134,7 +184,7 @@ exports.removeFromWishlist = async (req, res, next) => {
     });
 
     if (!wishlistItem) {
-      return next(createError(404, "Product not found in wishlist"));
+      return res.status(404).json({ msg: "Product not found in wishlist" });
     }
 
     // Delete the wishlist item
@@ -154,15 +204,31 @@ exports.removeFromWishlist = async (req, res, next) => {
 // Clear all items from wishlist
 exports.clearWishlist = async (req, res, next) => {
   try {
-    const { id: userId } = req.user;
+    // Changed to match your authentication pattern
+    const clerkID = req.auth.userId;
+
+    console.log("Request received at /wishlist (clear) with Clerk ID:", clerkID);
+
+    if (!clerkID) {
+      return res.status(401).json({ msg: "Unauthorized: Please log in" });
+    }
+
+    // Find user by clerkID
+    const user = await prisma.user.findUnique({
+      where: { clerkID },
+    });
+
+    if (!user) {
+      return res.status(404).json({ msg: "User account not found" });
+    }
 
     // Check if the user has a wishlist
     const wishlist = await prisma.wishlist.findUnique({
-      where: { user_id: parseInt(userId) }
+      where: { user_id: user.id }
     });
 
     if (!wishlist) {
-      return next(createError(404, "Wishlist not found"));
+      return res.status(404).json({ msg: "Wishlist not found" });
     }
 
     // Delete all wishlist items
