@@ -1,5 +1,6 @@
 const prisma = require("../config/prisma");
 const createError = require("../utils/createError");
+const { orderConfirmation } = require("./mailer-controller");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 exports.checkout = async (req, res, next) => {
@@ -7,6 +8,8 @@ exports.checkout = async (req, res, next) => {
 		// id ที่ส่งมาจาก order
 		const { id } = req.body;
 		console.log("checkout id : ", id);
+
+
 
 		// ค้นหา Order พร้อมรายการสินค้า
 		const order = await prisma.order.findUnique({
@@ -24,6 +27,23 @@ exports.checkout = async (req, res, next) => {
 			return next(createError(404, "Order Not Found"));
 		}
 
+		const paymentFind = await prisma.payment.findUnique({
+			where: { order_id: order.id}
+		})
+
+		// สร้าง record ใหม่ที่ table payment
+		if (paymentFind === null) {
+			await prisma.payment.create({
+				data: {
+					order_id: order.id,
+					paymentmethod: 'CreditCard',
+					amount: order.total_amount,
+					status: 'Unpaid'
+			}
+		})
+		}
+
+
 		const { total_amount, orderItems } = order;
 
 		// แปลงข้อมูลสินค้าจาก Order_Item ไปเป็น Line Items ของ Stripe
@@ -39,20 +59,15 @@ exports.checkout = async (req, res, next) => {
 			},
 			quantity: item.quantity,
 		}));
-		console.log("Complete Finding Item in DB. Starting checkout sessions");
-		// const line_items = orderItems.map((item) => {
-		//   console.log('item image : ', (item.product.images.match(/"(https?:\/\/[^"]+)"/))[0]);
-		// });
 
 		// สร้าง Stripe Checkout Session และส่ง orderId ไปใน metadata
 		const session = await stripe.checkout.sessions.create({
 			ui_mode: "embedded",
-			metadata: { orderId: order.id }, // บันทึก orderId ไว้ใน metadata
+			metadata: { orderId: order.id}, // บันทึก orderId ไว้ใน metadata
 			line_items,
 			mode: "payment",
 			return_url: `${process.env.CLIENT_URL}/checkout/checkout-status/{CHECKOUT_SESSION_ID}?orderId=${order.id}`,
 		});
-		console.log("Stripe session created:", session);
 
 		res.send({ clientSecret: session.client_secret });
 	} catch (error) {
@@ -63,19 +78,26 @@ exports.checkout = async (req, res, next) => {
 exports.checkOutStatus = async (req, res, next) => {
 	try {
 		const { session_id } = req.params;
+		const user = req.user
+		const customerEmail = user.emailAddresses[0].emailAddress;
+
+		
 		const session = await stripe.checkout.sessions.retrieve(session_id);
 
 		// ดึง orderId จาก metadata
 		const orderId = session.metadata?.orderId;
 
 		if (!orderId) {
-			return next(createError(400, "Order ID not found in session metadata"));
+			createError(400, "Order ID not found in session metadata");
 		}
 
 		// ตรวจสอบสถานะการชำระเงิน
 		if (session.payment_status !== "paid") {
-			return next(createError(400, "Payment not completed"));
+			createError(400, "Payment not completed");
 		}
+
+		// ใช้งานตัวส่ง mail 
+		orderConfirmation(customerEmail, orderId)
 
 		// อัปเดต payment_status ใน Order เป็น "Paid"
 		await prisma.order.update({
@@ -83,7 +105,13 @@ exports.checkOutStatus = async (req, res, next) => {
 			data: { payment_status: "Paid" },
 		});
 
-		res.json({ message: "Payment Complete", status: session.payment_status });
+		// อัปเดต payment_status ใน Order เป็น "Paid"
+		await prisma.payment.update({
+			where: { order_id: Number(orderId) },
+			data: { status: "Paid" },
+		});
+
+		res.json({ message: "Payment Complete", status: session.payment_status, orderId });
 	} catch (error) {
 		next(error);
 	}
