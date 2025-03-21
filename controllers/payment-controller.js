@@ -66,7 +66,7 @@ exports.checkout = async (req, res, next) => {
 			metadata: { orderId: order.id}, // บันทึก orderId ไว้ใน metadata
 			line_items,
 			mode: "payment",
-			return_url: `${process.env.CLIENT_URL}/checkout/checkout-status/{CHECKOUT_SESSION_ID}?orderId=${order.id}`,
+			return_url: `${process.env.CLIENT_URL}/checkout/checkout-status/{CHECKOUT_SESSION_ID}/?orderId=${order.id}`,
 		});
 
 		res.send({ clientSecret: session.client_secret });
