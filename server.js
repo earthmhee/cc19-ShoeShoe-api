@@ -3,6 +3,7 @@ const morgan = require("morgan");
 const helmet = require("helmet");
 const express = require("express");
 const cors = require("cors");
+const bodyParser = require("body-parser");
 const notFound = require("./middlewares/notFound");
 const handleError = require("./middlewares/handleError");
 const { clerkMiddleware } = require("@clerk/express");
@@ -21,11 +22,10 @@ const paymentRoute = require("./routes/payment-route");
 const addressRoute = require("./routes/address-route");
 const stockRoute = require("./routes/stock-route");
 const adminOrderRoute = require("./routes/admin-order-route");
-<<<<<<< HEAD
 const aiRoute = require("./routes/ai-route");
-=======
 const categoryRoute = require("./routes/category-route");
->>>>>>> dev
+
+const { showproduct } = require("./controllers/product-controller");
 
 // import Middlewares ...
 app.use(
@@ -48,6 +48,24 @@ app.options("*", cors()); // allows connection
 // route connect ...
 app.use(express.json());
 
+app.use(bodyParser.json());
+
+// ✅ โหลดสินค้าและเก็บใน Memory ของ Express
+const loadProducts = async () => {
+    try {
+        const products = await showproduct();
+        if (!products || products.length === 0) {
+            console.error("❌ No products found in database.");
+        } else {
+            app.set("products", products);
+            console.log(`📌 Loaded ${products.length} products into memory.`);
+        }
+    } catch (error) {
+        console.error("❌ Error loading products:", error);
+    }
+};
+loadProducts();
+
 app.use("/api/user", userRoute);
 app.use("/api/product", productRoute);
 app.use("/api/cart", cartRoute);
@@ -57,11 +75,8 @@ app.use("/api/payment", paymentRoute);
 app.use("/api/address", addressRoute);
 app.use("/api/stock", stockRoute);
 app.use("/api/admin", adminOrderRoute);
-<<<<<<< HEAD
 app.use("/api/ai", aiRoute)
-=======
 app.use("/api/category", categoryRoute)
->>>>>>> dev
 
 // notFound - send 404
 app.use(notFound);

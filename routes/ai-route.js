@@ -1,7 +1,8 @@
 const express = require("express");
 const { generateAIResponse } = require("../controllers/ai-controller");
+
 const aiRoute = express.Router();
 
-aiRoute.post("/generate", generateAIResponse);
+aiRoute.post("/search", generateAIResponse);
 
 module.exports = aiRoute;
