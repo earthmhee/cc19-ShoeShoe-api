@@ -1077,9 +1077,12 @@ async function main() {
 			role: "Admin",
 			address: {
 				homenum: "123/456",
+				firstname: "Admin",
+				lastname: "User",
 				subdistrict: "Chatuchak",
 				district: "Chatuchak",
 				province: "Bangkok",
+				country: "Thailand",
 				postcode: 10900,
 				phone: "0812345678",
 			},
@@ -1094,9 +1097,12 @@ async function main() {
 			role: "Customer",
 			address: {
 				homenum: "789/12",
+				firstname: "John",
+				lastname: "Doe",
 				subdistrict: "Bang Rak",
 				district: "Bang Rak",
 				province: "Bangkok",
+				country: "Thailand",
 				postcode: 10500,
 				phone: "0823456789",
 			},
@@ -1111,9 +1117,12 @@ async function main() {
 			role: "Customer",
 			address: {
 				homenum: "456/789",
+				firstname: "Jane",
+				lastname: "Smith",
 				subdistrict: "Pathum Wan",
 				district: "Pathum Wan",
 				province: "Bangkok",
+				country: "Thailand",
 				postcode: 10330,
 				phone: "0834567890",
 			},
@@ -1128,9 +1137,12 @@ async function main() {
 			role: "Customer",
 			address: {
 				homenum: "321/654",
+				firstname: "Bob",
+				lastname: "Williams",
 				subdistrict: "Watthana",
 				district: "Watthana",
 				province: "Bangkok",
+				country: "Thailand",
 				postcode: 10110,
 				phone: "0845678901",
 			},
@@ -1145,9 +1157,12 @@ async function main() {
 			role: "Customer",
 			address: {
 				homenum: "987/654",
+				firstname: "Sarah",
+				lastname: "Johnson",
 				subdistrict: "Phra Khanong",
 				district: "Khlong Toei",
 				province: "Bangkok",
+				country: "Thailand",
 				postcode: 10110,
 				phone: "0856789012",
 			},
@@ -1163,11 +1178,11 @@ async function main() {
 			data: userInfo,
 		});
 
-		// Create address for the user
+		// Create address for the user (note the relationship is now from address to user)
 		await prisma.address.create({
 			data: {
 				...address,
-				userId: user.id,
+				userId: user.id, // This connects the address to the user
 			},
 		});
 
@@ -1202,16 +1217,10 @@ async function main() {
 
 			await prisma.cart_Item.create({
 				data: {
+					cart_id: cart.id,
+					product_id: product.id,
 					quantity: Math.floor(Math.random() * 3) + 1,
-					cart: {
-						connect: { id: cart.id },
-					},
-					product: {
-						connect: { id: product.id },
-					},
-					Size: {
-						connect: { id: randomSize.id },
-					},
+					sizeId: randomSize.id, // Include the required sizeId
 				},
 			});
 		}
@@ -1261,6 +1270,9 @@ async function main() {
 	for (let i = 0; i < 5; i++) {
 		// Select a random user (excluding admin)
 		const user = createdUsers[Math.floor(Math.random() * 4) + 1];
+		const userAddress = await prisma.address.findFirst({
+			where: { userId: user.id },
+		});
 
 		// Create between 1-3 items for the order
 		const numItems = Math.floor(Math.random() * 3) + 1;
@@ -1271,13 +1283,19 @@ async function main() {
 
 		for (const product of selectedProducts) {
 			const quantity = Math.floor(Math.random() * 2) + 1;
-			const price = product.price * (1 - (product.discount || 0));
+			const price = product.price * (1 - parseFloat(product.discount || 0));
 			totalAmount += price * quantity;
+
+			// Get a random size for the product's gender
+			const availableSizes = product.gender === "Men" ? menSizes : womenSizes;
+			const randomSize =
+				availableSizes[Math.floor(Math.random() * availableSizes.length)];
 
 			orderItems.push({
 				product_id: product.id,
 				quantity,
 				price,
+				size_id: randomSize.id, // Include size_id for order items
 			});
 		}
 
@@ -1297,16 +1315,17 @@ async function main() {
 			? "Delivered"
 			: orderStatuses[Math.floor(Math.random() * 3)];
 
-		// Create the order
+		// Create the order with the address
 		const order = await prisma.order.create({
 			data: {
 				user_id: user.id,
 				order_date: orderDate,
-				updated_at: new Date(),
+				updated_at: new Date(), // Include the required updated_at field
 				total_amount: Math.round(totalAmount),
-				status: orderStatus,
+				status: orderStatus, // Set the status field
 				shipment_status: shipmentStatus,
 				payment_status: paymentStatus,
+				addressId: userAddress.id, // Link the order to the user's address
 			},
 		});
 
@@ -1316,7 +1335,7 @@ async function main() {
 				data: {
 					order_id: order.id,
 					product_id: item.product_id,
-					size_id: 3,
+					size_id: item.size_id, // Include the size_id
 					quantity: item.quantity,
 					price: Math.round(item.price),
 				},
@@ -1332,7 +1351,7 @@ async function main() {
 					paymentmethod:
 						paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
 					amount: Math.round(totalAmount),
-					status: "Paid",
+					status: "Paid", // Include the required status field
 				},
 			});
 		} else if (paymentStatus === "Unpaid") {
@@ -1343,7 +1362,7 @@ async function main() {
 					paymentmethod:
 						paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
 					amount: Math.round(totalAmount),
-					status: "Unpaid",
+					status: "Unpaid", // Include the required status field
 				},
 			});
 		}
