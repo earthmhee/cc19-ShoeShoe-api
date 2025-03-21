@@ -227,6 +227,38 @@ exports.deleteOrder = async (req, res, next) => {
 			});
 		}
 
+		const item = await prisma.order.findUnique({
+			where: { id: parseInt(id) },
+			include: {
+				orderItems: true,
+			},
+		});
+		if (!item || !item.orderItems || item.orderItems.length === 0) {
+			throw new Error("Order or orderItems not found");
+		}
+
+		for (const orderItem of item.orderItems) {
+			const stockItem = await prisma.stock.findFirst({
+				where: {
+					product_id: orderItem.product_id,
+					size_id: orderItem.size_id,
+				},
+			});
+
+			if (!stockItem) {
+				throw new Error(
+					`Stock not found for product_id: ${orderItem.product_id}, size_id: ${orderItem.size_id}`
+				);
+			}
+
+			await prisma.stock.update({
+				where: { id: stockItem.id },
+				data: {
+					stock_quantity: stockItem.stock_quantity + orderItem.quantity,
+				},
+			});
+		}
+
 		// Delete order (cascade deletion will handle order items)
 		await prisma.order.delete({
 			where: { id: parseInt(id) },
