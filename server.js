@@ -8,6 +8,7 @@ const handleError = require("./middlewares/handleError");
 const { clerkMiddleware } = require("@clerk/express");
 const app = express();
 
+
 // import Middlewares ...
 app.use(clerkMiddleware()); // Auth check from Clerk
 
@@ -22,6 +23,7 @@ const addressRoute = require("./routes/address-route");
 const stockRoute = require("./routes/stock-route");
 const adminOrderRoute = require("./routes/admin-order-route");
 const categoryRoute = require("./routes/category-route");
+const outfitRoute = require("./routes/outfit-route");
 
 // import Middlewares ...
 app.use(
@@ -54,6 +56,7 @@ app.use("/api/address", addressRoute);
 app.use("/api/stock", stockRoute);
 app.use("/api/admin", adminOrderRoute);
 app.use("/api/category", categoryRoute)
+app.use("/api/outfits", outfitRoute);
 
 // notFound - send 404
 app.use(notFound);
