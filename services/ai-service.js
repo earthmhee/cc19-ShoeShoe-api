@@ -1,377 +1,226 @@
-// services/ai-service.js
-const axios = require('axios');
+const OpenAI = require('openai');
 
-// This function will call Hugging Face API to generate outfit recommendations
+// This function will call OpenAI API to generate outfit recommendations
 async function generateOutfitRecommendations(product) {
   try {
-    // Create an enhanced prompt with specific instructions for better structured output
-    const enhancedPrompt = `
-As a fashion expert, generate 3 complete outfit recommendations that would match perfectly with:
-- Product: ${product.productname}
-- Brand: ${product.brand}
-- Gender: ${product.gender}
-- Category: ${product.category?.categoryname || 'footwear'}
-
-For each outfit, include:
-1. A name for the outfit style
-2. A brief description
-3. Top item (specific type, suggested brand, approximate price)
-4. Bottom item (specific type, suggested brand, approximate price)
-5. 1-2 accessories (specific type, suggested brand, approximate price)
-
-Format your response as a clear list with numbered outfits.
-IMPORTANT: Consider the shoe color, material, and occasion when making recommendations.
+    console.log(`Generating AI outfit recommendations for: ${product.productname}`);
+    
+    // Use OpenAI API for more reliable results
+    try {
+      // Initialize the OpenAI client
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY, // Make sure to add this to your .env file
+      });
+      
+      // Updated prompt for better outfit recommendations
+      const prompt = `
+You are a professional fashion stylist. Create 3 outfit recommendations for the following footwear:
+Product: ${product.productname}
+Brand: ${product.brand}
+Gender: ${product.gender}
+Category: ${product.category?.categoryname || 'footwear'}
+For each outfit, provide:
+1. A clear name for the outfit style (e.g., "Weekend Casual", "Business Professional")
+2. The style category (choose one: casual, business, elegant, sporty)
+3. A brief description that explains why this outfit works well with the footwear
+4. A match score from 80-98% indicating how well the outfit pairs with the footwear
+5. Three specific clothing items to complete the look:
+   - Top: Be very specific about the type (e.g., "Cotton Crew-Neck T-shirt", "Oxford Button-Down Shirt")
+   - Bottom: Be very specific about the type (e.g., "Distressed Slim-Fit Jeans", "Tailored Wool Dress Pants")
+   - Accessory: Be very specific about the type (e.g., "Leather Chronograph Watch", "Knitted Beanie Hat")
+For each clothing item, include a realistic brand name that would make this item.
+Use this format for each outfit:
+Outfit 1: [NAME]
+Style: [CATEGORY]
+Description: [DESCRIPTION]
+Match Score: [SCORE]%
+Top: [SPECIFIC TOP NAME] by [BRAND]
+Bottom: [SPECIFIC BOTTOM NAME] by [BRAND]
+Accessory: [SPECIFIC ACCESSORY NAME] by [BRAND]
+Make sure each outfit is distinctly different from the others. Consider the shoe's style, color, and formality level.
 `;
 
-    // Using Hugging Face API with a larger model for better quality
-    const response = await axios.post(
-      // You can try different models: bigscience/bloom, gpt2-xl, etc.
-      'https://api-inference.huggingface.co/models/bigscience/bloom', 
-      {
-        inputs: enhancedPrompt,
-        parameters: {
-          max_length: 800,  // Increased for more detailed responses
-          temperature: 0.7,
-          top_p: 0.9,       // Controls diversity
-          num_return_sequences: 1,
-          return_full_text: false
-        }
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.HUGGING_FACE_API_TOKEN}`,
-          'Content-Type': 'application/json'
-        }
+      // Call the OpenAI API with updated system message
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo", // You can use "gpt-4" for better results if you have access
+        messages: [
+          { role: "system", content: "You are a fashion expert and stylist specializing in outfit recommendations." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000
+      });
+      
+      // Get the generated text
+      const generatedText = completion.choices[0].message.content;
+      
+      if (!generatedText) {
+        throw new Error("No recommendations received from OpenAI");
       }
-    );
-
-    // Process the response from Hugging Face
-    const generatedText = response.data[0]?.generated_text;
-    
-    if (!generatedText) {
-      throw new Error("Failed to generate outfit recommendations");
+      
+      console.log("Successfully generated recommendations with OpenAI");
+      
+      // Parse the generated text into structured outfit recommendations
+      const outfits = parseOutfitsFromOpenAI(generatedText, product);
+      
+      return { outfits };
+      
+    } catch (openaiError) {
+      console.error("OpenAI API Error:", openaiError.message);
+      throw openaiError;
     }
-
-    // Parse and structure the generated text into outfits
-    const outfits = parseOutfitsFromText(generatedText, product);
-    
-    return { outfits };
   } catch (error) {
-    console.error("Error generating outfit recommendations:", error);
+    console.error("Error in generateOutfitRecommendations:", error.message);
     
     // Return fallback recommendations in case of error
     return getFallbackRecommendations(product);
   }
 }
 
-// Improved parsing function to better handle structured output
-function parseOutfitsFromText(text, product) {
+// Updated parser specifically designed for OpenAI's output format
+function parseOutfitsFromOpenAI(text, product) {
   try {
-    // Create a regex pattern to identify numbered outfit sections
-    const outfitPattern = /Outfit\s*(\d+)|(\d+)\s*\.\s*|Recommendation\s*(\d+)/gi;
+    // Split text into outfit sections using the new format
+    // Looking for "Outfit #:" pattern
+    const outfitSections = text.split(/(?:^|\n)(?:Outfit)\s*\d+\s*:/i)
+      .filter(section => section.trim().length > 0);
     
-    // Split the text by outfit patterns
-    let sections = text.split(outfitPattern).filter(Boolean);
+    // If no clear sections, try different approaches
+    let parsedOutfits = [];
     
-    // If the splitting didn't work as expected, try another approach
-    if (sections.length <= 1) {
-      // Look for numbered lists or sections
-      sections = text.split(/\n\s*\d+[\.\)]\s*/).filter(Boolean);
-    }
-    
-    if (sections.length <= 1) {
-      // Last resort: split by double newlines which often separate sections
-      sections = text.split(/\n\n+/).filter(Boolean);
-    }
-    
-    // If we still don't have enough sections, create default outfits
-    if (sections.length < 3) {
-      return [
-        createThematicOutfit(product, "Casual"),
-        createThematicOutfit(product, "Business"),
-        createThematicOutfit(product, "Weekend")
-      ];
-    }
-    
-    // Process each section into an outfit
-    return sections.slice(0, 3).map((section, index) => {
-      // Get the style name - either from the first line or by detecting style keywords
-      const lines = section.split('\n').filter(line => line.trim().length > 0);
-      
-      // Try to extract a name from the first line
-      let name = lines[0]?.trim().replace(/^[:-]\s*/, '') || `Outfit ${index + 1}`;
-      
-      // If the name is too long, it's probably not just a name
-      if (name.length > 30) {
-        name = extractStyleName(section) || `Outfit ${index + 1}`;
-      }
-      
-      // Detect the style from the text
-      const style = extractStyle(section);
-      
-      // Extract description - use first two sentences if possible
-      const description = extractDescription(section) || 
-        `A ${style} outfit that complements your ${product.productname} perfectly.`;
-      
-      // Extract outfit items
-      const items = extractOutfitItems(section, product.gender);
-      
-      // If we couldn't extract enough items, add some defaults
-      if (items.length < 3) {
-        const defaults = createDefaultItems(product.gender, style);
-        while (items.length < 3) {
-          const missingTypes = ['top', 'bottom', 'accessory'].filter(
+    if (outfitSections.length >= 2) {
+      // Parse each outfit section
+      parsedOutfits = outfitSections.map(section => {
+        // Extract outfit name - first line after "Outfit #:"
+        const nameMatch = section.match(/^\s*(.+?)(?:\n|$)/i);
+        const name = nameMatch ? nameMatch[1].trim() : "Stylish Outfit";
+        
+        // Extract style
+        const styleMatch = section.match(/(?:^|\n)(?:Style):\s*(.+?)(?:\n|$)/i);
+        const style = styleMatch ? styleMatch[1].trim().toLowerCase() : "casual";
+        
+        // Extract description
+        const descMatch = section.match(/(?:^|\n)(?:Description):\s*(.+?)(?:\n|$)/i);
+        const description = descMatch ? descMatch[1].trim() : 
+          `A ${style} outfit that pairs perfectly with your ${product.productname}.`;
+        
+        // Extract match score
+        const scoreMatch = section.match(/(?:^|\n)(?:Match Score):\s*(\d+)/i);
+        const matchScore = scoreMatch ? parseInt(scoreMatch[1]) : Math.floor(Math.random() * 15) + 83;
+        
+        // Extract items
+        const items = [];
+        
+        // Look for top with brand information
+        const topMatch = section.match(/(?:^|\n)(?:Top):\s*(.+?)(?:\n|$)/i);
+        if (topMatch) {
+          const topText = topMatch[1].trim();
+          const brandMatch = topText.match(/(.+?)\s+by\s+(.+)$/) || topText.match(/(.+?)\s+from\s+(.+)$/);
+          
+          items.push({
+            type: "top",
+            name: brandMatch ? brandMatch[1].trim() : topText,
+            brand: brandMatch ? brandMatch[2].trim() : guessBrandForItem("top", product.gender),
+            description: `A stylish ${style} top to pair with your shoes`
+          });
+        }
+        
+        // Look for bottom with brand information
+        const bottomMatch = section.match(/(?:^|\n)(?:Bottom):\s*(.+?)(?:\n|$)/i);
+        if (bottomMatch) {
+          const bottomText = bottomMatch[1].trim();
+          const brandMatch = bottomText.match(/(.+?)\s+by\s+(.+)$/) || bottomText.match(/(.+?)\s+from\s+(.+)$/);
+          
+          items.push({
+            type: "bottom",
+            name: brandMatch ? brandMatch[1].trim() : bottomText,
+            brand: brandMatch ? brandMatch[2].trim() : guessBrandForItem("bottom", product.gender),
+            description: `Perfect ${style} bottoms to complete your look`
+          });
+        }
+        
+        // Look for accessory with brand information
+        const accessoryMatch = section.match(/(?:^|\n)(?:Accessory):\s*(.+?)(?:\n|$)/i);
+        if (accessoryMatch) {
+          const accessoryText = accessoryMatch[1].trim();
+          const brandMatch = accessoryText.match(/(.+?)\s+by\s+(.+)$/) || accessoryText.match(/(.+?)\s+from\s+(.+)$/);
+          
+          items.push({
+            type: "accessory",
+            name: brandMatch ? brandMatch[1].trim() : accessoryText,
+            brand: brandMatch ? brandMatch[2].trim() : guessBrandForItem("accessory", product.gender),
+            description: `The perfect accessory to enhance your ${style} look`
+          });
+        }
+        
+        // If we don't have enough items, add default ones
+        if (items.length < 3) {
+          const defaultItems = createDefaultItems(product.gender, style);
+          
+          // Add missing item types
+          const missingTypes = ["top", "bottom", "accessory"].filter(
             type => !items.some(item => item.type === type)
           );
           
-          if (missingTypes.length > 0) {
-            const defaultItem = defaults.find(item => item.type === missingTypes[0]);
-            if (defaultItem) items.push(defaultItem);
-            else break;
-          } else {
-            break;
+          for (const type of missingTypes) {
+            const defaultItem = defaultItems.find(item => item.type === type);
+            if (defaultItem) {
+              items.push(defaultItem);
+            }
           }
         }
+        
+        return {
+          name,
+          style,
+          description,
+          matchScore,
+          items
+        };
+      });
+    }
+    
+    // If we couldn't parse properly or don't have enough outfits, use fallbacks
+    if (parsedOutfits.length < 3) {
+      const fallbackStyles = ["casual", "business", "elegant"];
+      while (parsedOutfits.length < 3) {
+        const style = fallbackStyles[parsedOutfits.length];
+        parsedOutfits.push(createThematicOutfit(product, style));
       }
-      
-      // Calculate a realistic match score based on text analysis
-      // More detailed/specific text = higher score
-      const matchQuality = section.length > 200 ? 'high' : 
-                           section.length > 100 ? 'medium' : 'low';
-      const baseScore = matchQuality === 'high' ? 92 : 
-                        matchQuality === 'medium' ? 88 : 85;
-      const matchScore = baseScore + Math.floor(Math.random() * 7);
-      
-      return {
-        name: name,
-        style: style,
-        description: description,
-        matchScore: matchScore,
-        items: items
-      };
-    });
+    }
+    
+    return parsedOutfits;
   } catch (parseError) {
-    console.error("Error parsing outfits from text:", parseError);
+    console.error("Error parsing outfits from OpenAI:", parseError);
+    
+    // Return default outfits if parsing fails
     return [
-      createThematicOutfit(product, "Casual"),
-      createThematicOutfit(product, "Business"),
-      createThematicOutfit(product, "Weekend")
+      createThematicOutfit(product, "casual"),
+      createThematicOutfit(product, "business"),
+      createThematicOutfit(product, "elegant")
     ];
   }
 }
 
-// Extract a style name from text
-function extractStyleName(text) {
-  // Check for style keywords followed by words like "look", "outfit", "style", etc.
-  const styleNameMatches = text.match(/(casual|formal|business|sporty|elegant|vintage|boho|streetwear|chic|preppy|minimalist|urban)\s+(look|outfit|style|ensemble|attire)/i);
-  
-  if (styleNameMatches) {
-    return styleNameMatches[0].charAt(0).toUpperCase() + styleNameMatches[0].slice(1);
-  }
-  
-  // Or just look for a style keyword
-  const styleKeywordMatch = text.match(/(casual|formal|business|sporty|elegant|vintage|boho|streetwear|chic|preppy|minimalist|urban)/i);
-  
-  if (styleKeywordMatch) {
-    return styleKeywordMatch[0].charAt(0).toUpperCase() + styleKeywordMatch[0].slice(1) + " Style";
-  }
-  
-  return null;
-}
-
-// Extract the overall style from text
-function extractStyle(text) {
-  const styleMap = {
-    casual: ['casual', 'relaxed', 'laid-back', 'everyday', 'comfy', 'comfortable'],
-    formal: ['formal', 'elegant', 'sophisticated', 'dressy', 'polished', 'classy'],
-    business: ['business', 'professional', 'office', 'work', 'corporate'],
-    sporty: ['sporty', 'athletic', 'active', 'workout', 'gym', 'sports'],
-    streetwear: ['streetwear', 'urban', 'street style', 'hypebeast', 'trendy'],
-    vintage: ['vintage', 'retro', 'classic', 'old-school', 'throwback'],
-    bohemian: ['bohemian', 'boho', 'free-spirited', 'hippie', 'earthy']
-  };
-  
-  // Check text against each style's keywords
-  for (const [style, keywords] of Object.entries(styleMap)) {
-    for (const keyword of keywords) {
-      if (text.toLowerCase().includes(keyword)) {
-        return style;
-      }
-    }
-  }
-  
-  // Default to casual if no style is detected
-  return 'casual';
-}
-
-// Extract a description from text
-function extractDescription(text) {
-  // Look for 1-2 complete sentences that aren't about specific items
-  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-  
-  for (const sentence of sentences) {
-    // Skip item-specific sentences
-    if (!sentence.match(/(top|bottom|shirt|pant|trouser|accessory|shoe|footwear|price|\$)/i)) {
-      return sentence.trim() + '.';
-    }
-  }
-  
-  // If no good sentence found, return the first sentence that's reasonably sized
-  for (const sentence of sentences) {
-    if (sentence.trim().length > 15 && sentence.trim().length < 100) {
-      return sentence.trim() + '.';
-    }
-  }
-  
-  return null;
-}
-
-// Extract clothing items from text
-function extractOutfitItems(text, gender) {
-  const items = [];
-  
-  // Identify potential clothing items by type
-  const topPatterns = [
-    /([a-z\s]+(?:shirt|blouse|top|sweater|jacket|blazer|tee|hoodie|pullover|cardigan))[^.]*?(\$\s*\d+\.?\d*|\d+\.?\d*\s*\$|^\s*$)/i,
-    /(top|upper\s+body|upper\s+half):\s*([^.]*)/i
-  ];
-  
-  const bottomPatterns = [
-    /([a-z\s]+(?:jeans|pants|trousers|shorts|skirt|chinos|slacks|leggings))[^.]*?(\$\s*\d+\.?\d*|\d+\.?\d*\s*\$|^\s*$)/i,
-    /(bottom|lower\s+body|lower\s+half):\s*([^.]*)/i
-  ];
-  
-  const accessoryPatterns = [
-    /([a-z\s]+(?:watch|necklace|bracelet|hat|cap|beanie|scarf|belt|sunglasses|glasses|earrings|ring|jewelry))[^.]*?(\$\s*\d+\.?\d*|\d+\.?\d*\s*\$|^\s*$)/i,
-    /(accessory|accessories):\s*([^.]*)/i
-  ];
-  
-  // Look for tops
-  for (const pattern of topPatterns) {
-    const match = text.match(pattern);
-    if (match) {
-      const name = (match[1] || match[2]).trim();
-      const priceMatch = name.match(/\$\s*(\d+\.?\d*)|(\d+\.?\d*)\s*\$/);
-      const price = priceMatch ? parseFloat(priceMatch[1] || priceMatch[2]) : generateRandomPrice('top');
-      
-      // Only add if we don't already have a top
-      if (!items.some(item => item.type === 'top')) {
-        items.push({
-          type: 'top',
-          name: name.replace(/\$\s*\d+\.?\d*|\d+\.?\d*\s*\$/g, '').trim(),
-          brand: extractBrand(text) || suggestBrand('top', gender),
-          price: price,
-          description: `A stylish ${extractStyle(text)} top to pair with your shoes`
-        });
-      }
-    }
-  }
-  
-  // Look for bottoms
-  for (const pattern of bottomPatterns) {
-    const match = text.match(pattern);
-    if (match) {
-      const name = (match[1] || match[2]).trim();
-      const priceMatch = name.match(/\$\s*(\d+\.?\d*)|(\d+\.?\d*)\s*\$/);
-      const price = priceMatch ? parseFloat(priceMatch[1] || priceMatch[2]) : generateRandomPrice('bottom');
-      
-      // Only add if we don't already have a bottom
-      if (!items.some(item => item.type === 'bottom')) {
-        items.push({
-          type: 'bottom',
-          name: name.replace(/\$\s*\d+\.?\d*|\d+\.?\d*\s*\$/g, '').trim(),
-          brand: extractBrand(text) || suggestBrand('bottom', gender),
-          price: price,
-          description: `Perfect ${extractStyle(text)} bottoms to complete your look`
-        });
-      }
-    }
-  }
-  
-  // Look for accessories
-  for (const pattern of accessoryPatterns) {
-    const match = text.match(pattern);
-    if (match) {
-      const name = (match[1] || match[2]).trim();
-      const priceMatch = name.match(/\$\s*(\d+\.?\d*)|(\d+\.?\d*)\s*\$/);
-      const price = priceMatch ? parseFloat(priceMatch[1] || priceMatch[2]) : generateRandomPrice('accessory');
-      
-      // Only add if we don't already have an accessory
-      if (!items.some(item => item.type === 'accessory')) {
-        items.push({
-          type: 'accessory',
-          name: name.replace(/\$\s*\d+\.?\d*|\d+\.?\d*\s*\$/g, '').trim(),
-          brand: extractBrand(text) || suggestBrand('accessory', gender),
-          price: price,
-          description: `Stylish accessory to enhance your outfit`
-        });
-      }
-    }
-  }
-  
-  return items;
-}
-
-// Extract brand names from text
-function extractBrand(text) {
-  // List of common clothing brands
-  const commonBrands = [
-    'Nike', 'Adidas', 'H&M', 'Zara', 'Levi\'s', 'Gap', 'Calvin Klein', 'Ralph Lauren',
-    'Tommy Hilfiger', 'Uniqlo', 'Gucci', 'Prada', 'Versace', 'Balenciaga', 'Fendi',
-    'Armani', 'Balmain', 'Burberry', 'Dior', 'Louis Vuitton', 'North Face', 'Patagonia',
-    'Columbia', 'Under Armour', 'New Balance', 'Converse', 'Vans', 'Reebok', 'Puma',
-    'Urban Outfitters', 'Forever 21', 'American Eagle', 'Hollister', 'Abercrombie'
-  ];
-  
-  // Check if any of the common brands appear in the text
-  for (const brand of commonBrands) {
-    const regex = new RegExp(`\\b${brand}\\b`, 'i');
-    if (regex.test(text)) {
-      return brand;
-    }
-  }
-  
-  return null;
-}
-
-// Suggest a brand based on item type and gender
-function suggestBrand(type, gender) {
+// Helper function to guess a brand based on item type and gender
+function guessBrandForItem(type, gender) {
   const brandsByType = {
     top: {
       Men: ['Nike', 'Ralph Lauren', 'H&M', 'Zara', 'Uniqlo', 'Gap', 'J.Crew'],
       Women: ['Zara', 'H&M', 'Madewell', 'J.Crew', 'Gap', 'Uniqlo', 'Free People'],
-      unisex: ['Nike', 'Adidas', 'H&M', 'Uniqlo', 'Gap']
     },
     bottom: {
       Men: ['Levi\'s', 'Dockers', 'Gap', 'H&M', 'Uniqlo', 'Dickies', 'Carhartt'],
       Women: ['Levi\'s', 'Zara', 'H&M', 'Madewell', 'Gap', 'American Eagle', 'Uniqlo'],
-      unisex: ['Levi\'s', 'Gap', 'H&M', 'Uniqlo', 'Dickies']
     },
     accessory: {
       Men: ['Fossil', 'Ray-Ban', 'Timex', 'Herschel', 'Nixon', 'Casio', 'Seiko'],
       Women: ['Michael Kors', 'Kate Spade', 'Ray-Ban', 'Madewell', 'Kendra Scott'],
-      unisex: ['Ray-Ban', 'Fossil', 'Herschel', 'Casio', 'Timex']
     }
   };
   
-  // Use the appropriate gender list or default to unisex
-  const genderKey = brandsByType[type][gender] ? gender : 'unisex';
-  const brands = brandsByType[type][genderKey];
-  
-  // Return a random brand from the list
+  const brands = brandsByType[type][gender] || brandsByType[type]['Men'];
   return brands[Math.floor(Math.random() * brands.length)];
-}
-
-// Generate a realistic random price based on item type
-function generateRandomPrice(type) {
-  const priceRanges = {
-    top: { min: 25, max: 65 },
-    bottom: { min: 35, max: 85 },
-    accessory: { min: 15, max: 50 }
-  };
-  
-  const range = priceRanges[type] || { min: 20, max: 60 };
-  return Number((Math.random() * (range.max - range.min) + range.min).toFixed(2));
 }
 
 // Create default items for a given gender and style
@@ -387,7 +236,6 @@ function createDefaultItems(gender, style) {
       brand: isMens ?
         (style === 'formal' ? "Brooks Brothers" : "Uniqlo") :
         (style === 'formal' ? "Ann Taylor" : "Madewell"),
-      price: style === 'formal' ? 59.99 : 29.99,
       description: `A versatile ${style} top`
     },
     {
@@ -398,7 +246,6 @@ function createDefaultItems(gender, style) {
       brand: isMens ?
         (style === 'formal' ? "Banana Republic" : "Levi's") :
         (style === 'formal' ? "Banana Republic" : "Madewell"),
-      price: style === 'formal' ? 79.99 : 59.99,
       description: `${style.charAt(0).toUpperCase() + style.slice(1)} bottoms for any occasion`
     },
     {
@@ -409,7 +256,6 @@ function createDefaultItems(gender, style) {
       brand: isMens ?
         (style === 'formal' ? "Fossil" : "Herschel") :
         (style === 'formal' ? "Kate Spade" : "Madewell"),
-      price: style === 'formal' ? 89.99 : 35.99,
       description: "The perfect accessory to complete your look"
     }
   ];
@@ -441,12 +287,14 @@ function createThematicOutfit(product, baseStyle) {
   } else if (shoeName.includes("heel") || shoeName.includes("pump")) {
     theme = "Elegant"; 
     style = "formal";
+  } else if (shoeName.includes("running") || shoeName.includes("speedgoat")) {
+    theme = "Active";
+    style = "sporty";
   }
   
   // Fall back to base style if no specific theme was detected
   if (!theme) {
-    theme = baseStyle;
-    // Keep the style as is
+    theme = baseStyle.charAt(0).toUpperCase() + baseStyle.slice(1);
   }
   
   // Create the outfit items based on the determined style
@@ -466,13 +314,219 @@ function createThematicOutfit(product, baseStyle) {
 
 // Fallback function with improved variety
 function getFallbackRecommendations(product) {
-  return { 
-    outfits: [
-      createThematicOutfit(product, "Casual"),
-      createThematicOutfit(product, "Business"),
-      createThematicOutfit(product, "Elegant")
-    ] 
-  };
+  const productNameLower = product.productname.toLowerCase();
+  const isMens = product.gender === 'Men';
+  const categoryName = product.category?.categoryname?.toLowerCase() || '';
+  
+  // Determine the product type for more specific recommendations
+  const isRunningShoe = productNameLower.includes('running') || 
+                        productNameLower.includes('athletic') || 
+                        productNameLower.includes('sports');
+  const isSandal = productNameLower.includes('sandal') || 
+                  productNameLower.includes('slide') || 
+                  categoryName.includes('sandal');
+  const isCasual = productNameLower.includes('casual') || 
+                  productNameLower.includes('sneaker') || 
+                  categoryName.includes('sneaker');
+  const isFormal = productNameLower.includes('formal') || 
+                  productNameLower.includes('oxford') || 
+                  productNameLower.includes('loafer');
+  const isOutdoor = productNameLower.includes('hiking') || 
+                    productNameLower.includes('trail') || 
+                    productNameLower.includes('outdoor') ||
+                    productNameLower.includes('hopara');
+  
+  // Base outfits collection
+  let outfits = [];
+  
+  // Casual outfit - good for most shoes
+  outfits.push({
+    name: "Casual Weekend",
+    style: "casual",
+    description: `A versatile casual outfit that pairs perfectly with your ${product.productname}`,
+    matchScore: 89,
+    items: [
+      {
+        type: "top",
+        name: isMens ? "Cotton T-shirt" : "Fitted T-shirt",
+        brand: "Uniqlo",
+        description: "A comfortable and stylish top for everyday wear"
+      },
+      {
+        type: "bottom",
+        name: isMens ? "Slim-fit jeans" : "High-waisted jeans",
+        brand: "Levi's",
+        description: "Classic jeans that go with everything"
+      },
+      {
+        type: "accessory",
+        name: isMens ? "Canvas Belt" : "Statement Necklace",
+        brand: isMens ? "Herschel" : "Kate Spade",
+        description: "The perfect finishing touch for your outfit"
+      }
+    ]
+  });
+  
+  // Add a specific outfit based on shoe type
+  if (isRunningShoe) {
+    // Athletic outfit for running shoes
+    outfits.push({
+      name: "Athletic Performance",
+      style: "sporty",
+      description: `A performance-focused outfit to maximize the athletic design of your ${product.productname}`,
+      matchScore: 95,
+      items: [
+        {
+          type: "top",
+          name: isMens ? "Performance T-shirt" : "Athletic Tank Top",
+          brand: "Under Armour",
+          description: "Moisture-wicking fabric to keep you cool during workouts"
+        },
+        {
+          type: "bottom",
+          name: isMens ? "Running Shorts" : "Athletic Leggings",
+          brand: "Nike",
+          description: "Designed for comfort during high-intensity activities"
+        },
+        {
+          type: "accessory",
+          name: "Sports Watch",
+          brand: "Garmin",
+          description: "Track your performance and stay on schedule"
+        }
+      ]
+    });
+  } else if (isSandal) {
+    // Beach/summer outfit for sandals
+    outfits.push({
+      name: "Summer Outing",
+      style: "casual",
+      description: `A light, breezy outfit perfect for warm days with your ${product.productname}`,
+      matchScore: 93,
+      items: [
+        {
+          type: "top",
+          name: isMens ? "Linen Shirt" : "Summer Blouse",
+          brand: isMens ? "J.Crew" : "Zara",
+          description: "Breathable fabric for hot summer days"
+        },
+        {
+          type: "bottom",
+          name: isMens ? "Chino Shorts" : "Flowing Skirt",
+          brand: isMens ? "Gap" : "H&M",
+          description: "Light and comfortable for warm weather"
+        },
+        {
+          type: "accessory",
+          name: isMens ? "Sunglasses" : "Straw Hat",
+          brand: "Ray-Ban",
+          description: "Essential protection from the sun with style"
+        }
+      ]
+    });
+  } else if (isOutdoor) {
+    // Outdoor/hiking outfit
+    outfits.push({
+      name: "Trail Explorer",
+      style: "casual",
+      description: `A durable, functional outfit for outdoor adventures with your ${product.productname}`,
+      matchScore: 97,
+      items: [
+        {
+          type: "top",
+          name: "Moisture-wicking Shirt",
+          brand: "Columbia",
+          description: "Keeps you dry and comfortable on the trail"
+        },
+        {
+          type: "bottom",
+          name: isMens ? "Convertible Hiking Pants" : "Hiking Shorts",
+          brand: "The North Face",
+          description: "Durable and versatile for any terrain"
+        },
+        {
+          type: "accessory",
+          name: "Trail Cap",
+          brand: "Patagonia",
+          description: "Protection from the elements during your adventures"
+        }
+      ]
+    });
+  } else if (isFormal) {
+    // Business outfit for formal shoes
+    outfits.push({
+      name: "Business Professional",
+      style: "business",
+      description: `A polished, professional outfit that complements your ${product.productname}`,
+      matchScore: 91,
+      items: [
+        {
+          type: "top",
+          name: isMens ? "Dress Shirt" : "Silk Blouse",
+          brand: isMens ? "Brooks Brothers" : "Ann Taylor",
+          description: "Crisp and professional for business settings"
+        },
+        {
+          type: "bottom",
+          name: isMens ? "Wool Dress Pants" : "Pencil Skirt",
+          brand: "Banana Republic",
+          description: "Tailored fit for a professional appearance"
+        },
+        {
+          type: "accessory",
+          name: isMens ? "Leather Belt" : "Pearl Earrings",
+          brand: isMens ? "Allen Edmonds" : "Tiffany & Co",
+          description: "Classic accessories to complete your business look"
+        }
+      ]
+    });
+  }
+  
+  // Add an elegant/dressy outfit for variety
+  outfits.push({
+    name: "Elegant Evening",
+    style: "elegant",
+    description: `A sophisticated outfit for special occasions with your ${product.productname}`,
+    matchScore: 84,
+    items: [
+      {
+        type: "top",
+        name: isMens ? "Button-down Shirt" : "Silk Camisole",
+        brand: isMens ? "Calvin Klein" : "Madewell",
+        description: "Refined and elegant for special occasions"
+      },
+      {
+        type: "bottom",
+        name: isMens ? "Tailored Chinos" : "A-line Skirt",
+        brand: isMens ? "Tommy Hilfiger" : "Club Monaco",
+        description: "Sophisticated yet comfortable"
+      },
+      {
+        type: "accessory",
+        name: isMens ? "Leather Watch" : "Statement Bracelet",
+        brand: isMens ? "Fossil" : "Michael Kors",
+        description: "Adds a touch of elegance to complete your look"
+      }
+    ]
+  });
+  
+  // Ensure we have at least 3 outfits, but no more than 3
+  while (outfits.length > 3) {
+    // Remove the outfit with the lowest match score
+    let lowestScoreIndex = 0;
+    let lowestScore = outfits[0].matchScore;
+    
+    for (let i = 1; i < outfits.length; i++) {
+      if (outfits[i].matchScore < lowestScore) {
+        lowestScore = outfits[i].matchScore;
+        lowestScoreIndex = i;
+      }
+    }
+    
+    outfits.splice(lowestScoreIndex, 1);
+  }
+  
+  return { outfits };
 }
 
 module.exports = { generateOutfitRecommendations };
