@@ -1,10 +1,10 @@
 const OpenAI = require('openai');
 
-// This function will call OpenAI API to generate outfit recommendations
+//call OpenAI API to generate outfit recommendation
 async function generateOutfitRecommendations(product) {
   try {
     console.log(`Generating AI outfit recommendations for: ${product.productname}`);
-    
+
     // Use OpenAI API for more reliable results
     try {
       // Initialize the OpenAI client
