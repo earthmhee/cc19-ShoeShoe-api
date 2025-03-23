@@ -2,97 +2,56 @@ const prisma = require("../config/prisma");
 
 exports.showproduct = async (req, res, next) => {
   try {
-    // Extract filter parameters from req.body
-    const { category, gender, size, priceRange, brand } = req.body || {};
-    
-    console.log("Received filter parameters:", { category, gender, size, priceRange, brand });
-    
-    // Build the base query filter
+    // ตรวจสอบว่า req.body มีค่าหรือไม่
+    const filters = req?.body || {};
+    console.log("📌 Received filter parameters:", filters);
+
+    // ฟิลเตอร์พื้นฐาน
     const filter = {};
-    
-    // Handle category filter (could be single ID or array)
-    if (category) {
-      if (Array.isArray(category)) {
-        filter.category_id = { in: category.map(id => parseInt(id)) };
-      } else {
-        filter.category_id = parseInt(category);
-      }
+
+    if (filters.category) {
+      filter.category_id = parseInt(filters.category);
     }
-    
-    // Handle gender filter
-    if (gender) {
-      if (Array.isArray(gender)) {
-        filter.gender = { in: gender };
-      } else {
-        filter.gender = gender;
-      }
+    if (filters.gender) {
+      filter.gender = filters.gender;
     }
-    
-    // Handle brand filter (could be single brand or array)
-    if (brand) {
-      if (Array.isArray(brand)) {
-        filter.brand = { in: brand };
-      } else {
-        filter.brand = brand;
-      }
+    if (filters.brand) {
+      filter.brand = filters.brand;
     }
-    
-    // Handle price range if provided
-    if (priceRange) {
+    if (filters.priceRange) {
       filter.price = {};
-      
-      if (priceRange.min !== undefined) {
-        filter.price.gte = parseInt(priceRange.min);
+      if (filters.priceRange.min !== undefined) {
+        filter.price.gte = parseInt(filters.priceRange.min);
       }
-      
-      if (priceRange.max !== undefined) {
-        filter.price.lte = parseInt(priceRange.max);
+      if (filters.priceRange.max !== undefined) {
+        filter.price.lte = parseInt(filters.priceRange.max);
       }
     }
-    
-    console.log("Applied filters:", JSON.stringify(filter, null, 2));
-    
-    // Get all products matching the base filters
+
+    console.log("📌 Applied filters:", filter);
+
+    // ดึงสินค้าจากฐานข้อมูล
     let products = await prisma.product.findMany({
       where: filter,
       include: {
         category: true,
-        stock: {
-          include: {
-            size: true
-          }
-        },
+        stock: { include: { size: true } },
       },
     });
-    
-    console.log(`Found ${products.length} products after applying database filters`);
-    
-    // Handle size filtering separately if needed
-    if (size) {
-      // Convert to array if not already
-      const sizeIds = Array.isArray(size) 
-        ? size.map(id => parseInt(id))
-        : [parseInt(size)];
-        
-      console.log("Filtering by size IDs:", sizeIds);
-      
-      // Filter products by size
-      const beforeCount = products.length;
-      products = products.filter(product => 
-        product.stock.some(stockItem => 
-          sizeIds.includes(stockItem.size_id) && stockItem.stock_quantity > 0
-        )
-      );
-      console.log(`Filtered out ${beforeCount - products.length} products that didn't match the size criteria`);
+
+    console.log(`📌 Found ${products.length} products`);
+
+    // ตรวจสอบว่ามี `res` หรือไม่ (ถ้าเรียกจาก API)
+    if (res) {
+      return res.status(200).json({ msg: "Get Products Success", data: products });
     }
-    
-    res.status(200).json({
-      msg: "Get Products Success",
-      data: products,
-    });
+    return products; // คืนค่าสำหรับการใช้ใน AI Controller
   } catch (error) {
-    console.error("Error fetching products:", error);
-    next(error);
+    console.error("❌ Error fetching products:", error);
+    if (res) {
+      return res.status(500).json({ msg: "Error fetching products" });
+    }
+    return [];
   }
 };
 
