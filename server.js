@@ -8,8 +8,7 @@ const handleError = require("./middlewares/handleError");
 const { clerkMiddleware } = require("@clerk/express");
 const app = express();
 
-
-// import Middlewares ...
+// import clerk Middlewares ...
 app.use(clerkMiddleware()); // Auth check from Clerk
 
 // import routes ...

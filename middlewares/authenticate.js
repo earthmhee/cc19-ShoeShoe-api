@@ -5,15 +5,13 @@ module.exports = async (req, res, next) => {
 	try {
 		// Extract Clerk User ID
 		const clerkID = req.auth.userId;
-		console.log("clerk id : ", clerkID);
 
 		if (!clerkID) {
-			return next(createError(401, "Unauthorized! 55555555"));
+			return next(createError(401, "Unauthorized!"));
 		}
 
 		// Fetch user details from Clerk
 		const userClerk = await clerkClient.users.getUser(clerkID);
-		// console.log("userClerk object:", userClerk);
 		
 		// Attach user data to the request object
 		req.user = userClerk;

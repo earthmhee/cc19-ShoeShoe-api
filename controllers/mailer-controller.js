@@ -99,7 +99,6 @@ exports.orderConfirmation = async (customerEmail, orderId) => {
       `,
     };
     
-
     await transporter.sendMail(mailOptions);
   } catch (error) {
     console.error("Error sending email:", error);
