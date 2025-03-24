@@ -8,16 +8,14 @@ exports.createNewAccount = async (req, res, next) => {
 		const userClerk = req.user;
 		const userId = userClerk.id;
 		const userRole = userClerk?.publicMetadata?.role
-		console.log("User Id : ", id);
 		// look for user
 		const rs = await prisma.user.findUnique({
 			where: {
 				clerkID: id,
 			},
 		});
-		// const role = "Customer"
+
 		// หากเป็น null (สร้าง user ครั้งแรก) ทำการสร้างผู้ใช้ใน prisma
-		console.log(rs)
 		if (rs === null) {
 			const result = await prisma.user.create({
 				data: {
@@ -61,7 +59,7 @@ exports.createNewAccount = async (req, res, next) => {
 	}
 };
 
-// dummy for now
+// update Account
 exports.createUpdateAccount = async (req, res, next) => {
 	try {
 		const { firstName, lastName } = req.body; // config for every input
@@ -70,12 +68,8 @@ exports.createUpdateAccount = async (req, res, next) => {
 
 		const userClerk = req.user;
 		const userId = userClerk.id;
-
-		// check if Admin
 		const userRole = userClerk?.publicMetadata?.role;
-		// if (userRole !== "Admin") {
-		// 	createError(401, "Unauthorized !!");
-		// }
+
 		// update in Clerk Database
 		const rs = await clerkClient.users.updateUser(userId, input);
 		// update in mySql Database
@@ -117,8 +111,6 @@ exports.changePassword = async (req, res, next) => {
 		next(error);
 	}
 };
-
-// Add these functions to controllers/user-controller.js
 
 // Get all users
 exports.getUsers = async (req, res, next) => {
@@ -203,7 +195,7 @@ exports.getUsers = async (req, res, next) => {
 	}
   };
   
-  // Get user by ID
+// Get user by ID
 exports.getUserById = async (req, res, next) => {
 	try {
 	  const { id } = req.params;
