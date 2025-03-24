@@ -14,6 +14,8 @@ const promptOptions = [
   "ขอแนะนำรองเท้าสำหรับวิ่ง",
   "ขอแนะนำรองเท้าสำหรับเดินทาง",
   "ขอแนะนำรองเท้าสำหรับบาสเก็ตบอล",
+  "ขอรองเท้าผู้หญิง",
+  "ขอรองเท้าผู้ชายสำหรับวิ่ง",
 ];
 
 const generateAIResponse = async (req, res) => {
@@ -30,34 +32,37 @@ const generateAIResponse = async (req, res) => {
     let products = await showproduct();
     req.app.set("products", products);
 
-    console.log(`📌 จำนวนสินค้าทั้งหมดที่โหลดจาก Database: ${products.length}`);
+    console.log(` สินค้าทั้งหมด: ${products.length} รายการ`);
 
-    // 🔥 ดึงรายชื่อแบรนด์ทั้งหมดจากสินค้า (ลบช่องว่างเกินออก)
     const availableBrands = [...new Set(products.map(p => p.brand.toLowerCase().trim()))];
-    console.log("📌 รายชื่อแบรนด์ที่มีอยู่ในระบบ:", availableBrands);
+    console.log(" แบรนด์ในระบบ:", availableBrands);
 
     let maxPrice = null;
     const priceMatch = prompt.match(/(\d{3,6})\s*บาท?/);
     if (priceMatch) {
       maxPrice = parseInt(priceMatch[1], 10);
-      console.log(`📌 ค้นหาสินค้าที่ราคาไม่เกิน: ${maxPrice} บาท`);
+      console.log(` ค้นหาสินค้าราคาต่ำกว่า ${maxPrice} บาท`);
     }
 
-    const isBudgetQuery = maxPrice !== null;
-    let matchingProducts = products.filter((p) => (isBudgetQuery ? p.price <= maxPrice : true));
+    let genderFilter = null;
+    if (/ผู้หญิง|หญิง|women/i.test(prompt)) {
+      genderFilter = "Women";
+    } else if (/ผู้ชาย|ชาย|men/i.test(prompt)) {
+      genderFilter = "Men";
+    }
 
-    // 🎯 ค้นหาสินค้าตามแบรนด์ (แก้ให้หาได้ทุกกรณี)
-    const matchingBrand = availableBrands.find(brand => 
+    const matchingBrand = availableBrands.find(brand =>
       prompt.toLowerCase().replace(/\s+/g, "").includes(brand.replace(/\s+/g, ""))
     );
-    if (matchingBrand) {
-      matchingProducts = matchingProducts.filter((p) => 
-        p.brand.toLowerCase().trim() === matchingBrand
-      );
-      console.log(`📌 ค้นหาสินค้าของแบรนด์: ${matchingBrand}`);
-    }
 
-    // 🎯 ค้นหาสินค้าตามประเภทการใช้งาน
+    let matchingProducts = products.filter((p) => {
+      let match = true;
+      if (maxPrice) match = match && p.price <= maxPrice;
+      if (genderFilter) match = match && p.gender.toLowerCase() === genderFilter.toLowerCase();
+      if (matchingBrand) match = match && p.brand.toLowerCase().trim() === matchingBrand;
+      return match;
+    });
+
     if (/(วิ่ง|run|ออกกำลังกาย)/i.test(prompt)) {
       matchingProducts = matchingProducts.filter((p) =>
         p.productname.toLowerCase().includes("run")
@@ -72,11 +77,10 @@ const generateAIResponse = async (req, res) => {
       );
     }
 
-    console.log(`📌 พบสินค้าตรงเงื่อนไข: ${matchingProducts.length} รายการ`);
+    console.log(` พบสินค้าที่ตรงเงื่อนไข: ${matchingProducts.length} รายการ`);
 
-    // 🔄 ถ้าไม่มีสินค้าตรงเงื่อนไข → แสดงสินค้าสุ่มแทน
     if (matchingProducts.length === 0) {
-      console.log("📌 ไม่มีสินค้าตรงเงื่อนไข → แสดงสินค้าสุ่มแทน");
+      console.log(" ไม่เจอสินค้าที่ตรงเงื่อนไข → แสดงสินค้าสุ่มแทน");
       matchingProducts = products.sort(() => 0.5 - Math.random()).slice(0, 5);
     }
 
@@ -96,7 +100,7 @@ const generateAIResponse = async (req, res) => {
       กรุณาแนะนำสินค้าที่ดีที่สุดและให้เหตุผลที่เป็นธรรมชาติ
     `;
 
-    console.log("📌 AI Prompt ที่ส่งไป:\n", aiPrompt);
+    console.log(" AI Prompt ที่ส่งไป:\n", aiPrompt);
 
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: aiPrompt }] }],
@@ -114,11 +118,11 @@ const generateAIResponse = async (req, res) => {
       .slice(0, 5)
       .join("\n");
 
-    console.log("📌 คำตอบจาก AI:\n", formattedResponse);
+    console.log(" คำตอบจาก AI:\n", formattedResponse);
 
     return res.json({ response: formattedResponse });
   } catch (error) {
-    console.error("❌ เกิดข้อผิดพลาด:", error);
+    console.error("เกิดข้อผิดพลาด:", error);
     return res.status(500).json({ error: "เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่ภายหลัง" });
   }
 };
