@@ -7,9 +7,6 @@ exports.checkout = async (req, res, next) => {
 	try {
 		// id ที่ส่งมาจาก order
 		const { id } = req.body;
-		console.log("checkout id : ", id);
-
-
 
 		// ค้นหา Order พร้อมรายการสินค้า
 		const order = await prisma.order.findUnique({
@@ -43,7 +40,6 @@ exports.checkout = async (req, res, next) => {
 		})
 		}
 
-
 		const { total_amount, orderItems } = order;
 
 		// แปลงข้อมูลสินค้าจาก Order_Item ไปเป็น Line Items ของ Stripe
@@ -66,7 +62,7 @@ exports.checkout = async (req, res, next) => {
 			metadata: { orderId: order.id}, // บันทึก orderId ไว้ใน metadata
 			line_items,
 			mode: "payment",
-			return_url: `${process.env.CLIENT_URL}/checkout/checkout-status/{CHECKOUT_SESSION_ID}/?orderId=${order.id}`,
+			return_url: `${process.env.CLIENT_URL}/checkout/checkout-status/{CHECKOUT_SESSION_ID}/?orderId=${order.id}`, // ส่ง orderId ผ่าน arg
 		});
 
 		res.send({ clientSecret: session.client_secret });
@@ -105,7 +101,7 @@ exports.checkOutStatus = async (req, res, next) => {
 			data: { payment_status: "Paid" },
 		});
 
-		// อัปเดต payment_status ใน Order เป็น "Paid"
+		// อัปเดต status ใน payment เป็น "Paid"
 		await prisma.payment.update({
 			where: { order_id: Number(orderId) },
 			data: { status: "Paid" },
