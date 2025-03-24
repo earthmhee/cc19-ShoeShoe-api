@@ -3,28 +3,26 @@ const prisma = require("../config/prisma");
 const createError = require("../utils/createError");
 
 const transporter = nodemailer.createTransport({
-  service: "gmail", // email service
+  service: "gmail",
   auth: {
-    user: "shoeshoe.notify@gmail.com", // email
+    user: "shoeshoe.notify@gmail.com",
     pass: process.env.EMAIL_PASS,
   },
 });
 
 exports.orderConfirmation = async (customerEmail, orderId) => {
 
-  // validate request body
   if (!customerEmail || !orderId) {
     createError(400, "Invalid order data or missing customer e-mail")
   }
 
   try {
-    // ค้นหา Order พร้อมรายการสินค้า
     const order = await prisma.order.findUnique({
       where: { id: Number(orderId) },
       include: {
         orderItems: {
           include: {
-            product: true, // ดึงข้อมูลสินค้าใน Order_Item
+            product: true,
           },
         },
       },
@@ -36,7 +34,6 @@ exports.orderConfirmation = async (customerEmail, orderId) => {
 
     const { total_amount, orderItems } = order;
 
-    // Map order items to format needed for email
     const emailItems = orderItems.map((item) => ({
       name: item.product.productname,
       quantity: item.quantity,
@@ -44,7 +41,6 @@ exports.orderConfirmation = async (customerEmail, orderId) => {
       image: item.product.images.match(/(https?:\/\/[^"]+)/)[0]
     }));
 
-    // Send email
     const mailOptions = {
       from: "shoeshoe.notify@gmail.com",
       to: customerEmail,

@@ -1,6 +1,5 @@
 const prisma = require("../config/prisma");
 
-// Get all categories
 exports.getAllCategories = async (req, res, next) => {
   try {
     const categories = await prisma.category.findMany({
@@ -19,7 +18,6 @@ exports.getAllCategories = async (req, res, next) => {
   }
 };
 
-// Get a single category by ID
 exports.getCategoryById = async (req, res, next) => {
   try {
     const { id } = req.params;
