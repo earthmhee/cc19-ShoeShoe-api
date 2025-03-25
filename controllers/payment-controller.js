@@ -64,7 +64,7 @@ exports.checkout = async (req, res, next) => {
 			mode: "payment",
 			return_url: `${process.env.CLIENT_URL}/checkout/checkout-status/{CHECKOUT_SESSION_ID}/?orderId=${order.id}`, // ส่ง orderId ผ่าน arg
 		});
-
+		console.log("session created");
 		res.send({ clientSecret: session.client_secret });
 	} catch (error) {
 		next(error);
